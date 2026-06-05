@@ -46,10 +46,10 @@ export default function Home() {
   }, { scope: containerRef });
 
   return (
-    <main ref={containerRef} className="w-full relative bg-black min-h-[300dvh] overflow-hidden">
+    <main ref={containerRef} className="w-full relative bg-black min-h-[300dvh] overflow-clip">
       {/* Hero Section */}
       <section className="min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 pt-20">
-        <div className="hero-reveal px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium border border-white/20 text-white mb-8">
+        <div className="hero-reveal text-lamborghini-gold text-sm uppercase tracking-[0.2em] font-medium mb-6">
           Exclusive Bridal Mehendi
         </div>
         <h1 className="hero-reveal text-[54px] md:text-[80px] lg:text-[120px] font-heading text-white tracking-tight uppercase text-center max-w-[1440px] leading-[0.92]">
@@ -91,18 +91,18 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bento Images (Double Bezel adapted to sharp corners) */}
+          {/* Bento Images */}
           <div className="col-span-1 md:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-            <div className="scroll-reveal p-1.5 md:p-2 border border-white/10 bg-black/5 md:mt-24 h-max">
-              <div className="w-full aspect-[4/5] bg-dark-iron shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative overflow-hidden group cursor-pointer">
+            <div className="scroll-reveal md:mt-24 h-max">
+              <div className="w-full aspect-[4/5] bg-dark-iron relative overflow-clip group cursor-pointer border border-white/10">
                  {/* Image placeholder with hover scale */}
                  <div className="absolute inset-0 bg-stone transition-transform duration-[1200ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
                  <div className="absolute bottom-6 left-6 text-white uppercase text-xs tracking-widest font-heading z-10">Contemporary</div>
               </div>
             </div>
-            <div className="scroll-reveal p-1.5 md:p-2 border border-white/10 bg-black/5 md:-mt-12 md:ml-12 z-10 h-max">
-              <div className="w-full aspect-[3/4] bg-charcoal shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative overflow-hidden group cursor-pointer">
+            <div className="scroll-reveal md:-mt-12 md:ml-12 z-10 h-max">
+              <div className="w-full aspect-[3/4] bg-charcoal relative overflow-clip group cursor-pointer border border-white/10">
                  <div className="absolute inset-0 bg-stone transition-transform duration-[1200ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
                  <div className="absolute bottom-6 left-6 text-white uppercase text-xs tracking-widest font-heading z-10">Traditional</div>

@@ -21,13 +21,15 @@ export async function GET(request: Request) {
     const supabase = createClient();
 
     // 1. Fetch system working hours (in UTC from DB, but conceptually IST)
-    const { data: settings, error: settingsError } = await supabase
+    let { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("working_hours_start, working_hours_end")
       .single();
 
     if (settingsError || !settings) {
-      throw new Error("Could not fetch global settings");
+      console.warn("Could not fetch global settings, falling back to 10:00-18:00", settingsError);
+      // Fallback
+      settings = { working_hours_start: "10:00:00", working_hours_end: "18:00:00" };
     }
 
     // Explicit Date-fns-tz Timezone Mathematics
