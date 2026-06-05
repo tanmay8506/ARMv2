@@ -1,101 +1,126 @@
-import Image from "next/image";
+"use client";
+
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowUpRight } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const BookingCalendar = dynamic(() => import("@/components/BookingCalendar"), { ssr: false });
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const containerRef = useRef<HTMLDivElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useGSAP(() => {
+    // Hero Entrance
+    gsap.from(".hero-reveal", {
+      y: 100,
+      opacity: 0,
+      filter: "blur(10px)",
+      duration: 1.5,
+      stagger: 0.15,
+      ease: "power4.out",
+    });
+
+    // Scroll Reveal Elements
+    const sections = gsap.utils.toArray(".scroll-section") as HTMLElement[];
+    sections.forEach((section) => {
+      const elements = section.querySelectorAll(".scroll-reveal");
+      if (elements.length === 0) return;
+      gsap.from(elements, {
+        scrollTrigger: {
+          trigger: section,
+          start: "top 80%",
+        },
+        y: 60,
+        opacity: 0,
+        filter: "blur(8px)",
+        duration: 1.2,
+        stagger: 0.1,
+        ease: "power3.out",
+      });
+    });
+  }, { scope: containerRef });
+
+  return (
+    <main ref={containerRef} className="w-full relative bg-black min-h-[300dvh] overflow-hidden">
+      {/* Hero Section */}
+      <section className="min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 pt-20">
+        <div className="hero-reveal px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium border border-white/20 text-white mb-8">
+          Exclusive Bridal Mehendi
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        <h1 className="hero-reveal text-[54px] md:text-[80px] lg:text-[120px] font-heading text-white tracking-tight uppercase text-center max-w-[1440px] leading-[0.92]">
+          ARM Artistry
+        </h1>
+        <p className="hero-reveal mt-10 text-ash text-lg md:text-xl font-sans tracking-wide max-w-[600px] text-center px-4">
+          The intersection of traditional heritage and unapologetic modern luxury. We craft bespoke henna narratives for the vanguard bride.
+        </p>
+        
+        <div className="hero-reveal mt-16 group cursor-pointer">
+          <button className="bg-lamborghini-gold text-black flex items-center gap-4 px-6 py-4 text-base uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] font-sans tracking-wider font-semibold border-none rounded-none active:scale-[0.98]">
+            <span>Discover More</span>
+            <div className="w-8 h-8 bg-black/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
+              <ArrowUpRight className="w-4 h-4 text-black" strokeWidth={1.5} />
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* Asymmetrical Bento & Typography block */}
+      <section className="scroll-section min-h-[100dvh] w-full py-24 md:py-40 px-4 md:px-10 flex items-center justify-center bg-black">
+        <div className="max-w-[1440px] w-full grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-6">
+          
+          {/* Typography Block */}
+          <div className="scroll-reveal col-span-1 md:col-span-5 flex flex-col justify-center pr-0 md:pr-10">
+            <h2 className="text-[40px] md:text-[80px] font-heading text-white uppercase leading-[1.13]">
+              The Art of Henna
+            </h2>
+            <p className="mt-8 text-smoke text-base font-sans leading-[1.56]">
+              Every design is a masterpiece, crafted with precision and passion. We specialize in intricate, contemporary, and traditional bridal mehendi that tells your unique story.
+            </p>
+            <div className="mt-12 group w-max cursor-pointer">
+              <button className="bg-transparent text-white border border-white/20 flex items-center gap-4 px-5 py-4 text-sm uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/5 font-sans tracking-widest rounded-none active:scale-[0.98]">
+                <span>View Portfolio</span>
+                <div className="w-6 h-6 bg-white/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
+                  <ArrowUpRight className="w-3 h-3 text-white" strokeWidth={1.5} />
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Bento Images (Double Bezel adapted to sharp corners) */}
+          <div className="col-span-1 md:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+            <div className="scroll-reveal p-1.5 md:p-2 border border-white/10 bg-black/5 md:mt-24 h-max">
+              <div className="w-full aspect-[4/5] bg-dark-iron shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative overflow-hidden group cursor-pointer">
+                 {/* Image placeholder with hover scale */}
+                 <div className="absolute inset-0 bg-stone transition-transform duration-[1200ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
+                 <div className="absolute bottom-6 left-6 text-white uppercase text-xs tracking-widest font-heading z-10">Contemporary</div>
+              </div>
+            </div>
+            <div className="scroll-reveal p-1.5 md:p-2 border border-white/10 bg-black/5 md:-mt-12 md:ml-12 z-10 h-max">
+              <div className="w-full aspect-[3/4] bg-charcoal shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] relative overflow-hidden group cursor-pointer">
+                 <div className="absolute inset-0 bg-stone transition-transform duration-[1200ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
+                 <div className="absolute bottom-6 left-6 text-white uppercase text-xs tracking-widest font-heading z-10">Traditional</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA / Booking Calendar Section */}
+      <section className="scroll-section min-h-[80dvh] w-full border-t border-charcoal flex flex-col items-center justify-center py-24 md:py-40 px-4 bg-black relative">
+        <h2 className="scroll-reveal text-[40px] md:text-[80px] font-heading text-white uppercase leading-[1.13] text-center max-w-[1000px] mb-16">
+          Secure Your Date
+        </h2>
+        <div className="scroll-reveal w-full relative z-10">
+          <BookingCalendar />
+        </div>
+      </section>
+    </main>
   );
 }

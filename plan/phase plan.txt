@@ -1,0 +1,238 @@
+ARM Artistry — AI-Optimized Execution Roadmap (v2 — Skill-Integrated)
+This is the definitive roadmap for the ARM Artistry free-stack migration. Each stage contains a Master Execution Prompt and a Skill Activation Block. When you (the AI) begin a stage, you must: (1) load the specified skills, (2) internalize the Master Prompt, (3) write robust error-free code, (4) perform your own QA, and (5) verify edge cases before declaring the stage complete.
+
+SKILL DIRECTORY: C:\Users\lenovo\Desktop\arm-artistry\antigravity-template\SKILLS\
+PLAN DIRECTORY:  C:\Users\lenovo\Desktop\arm-artistry\plan\
+SUMMARY FILE:    C:\Users\lenovo\Desktop\arm-artistry\antigravity-template\SKILLS\summary.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAGE 1: Foundation & Physics (Zero UI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Get the engine running with perfect typography, colors, and smooth scrolling before drawing any boxes. Generate the design system FIRST so every token is decided before a single line of CSS is written.
+
+Step 1.1: Run UI UX Pro Max design system generator with ARM Artistry's product description. Save the output as design-system/MASTER.md in the project root.
+Step 1.2: Select the best-matching DESIGN.md from awesome-design-md-main (recommendation: Airbnb for warmth + photography-driven layouts, or Framer for motion-first luxury). Copy it to project root as DESIGN.md.
+Step 1.3: Init Next.js 14 and install all locked dependencies (date-fns-tz, gsap, lenis, etc.).
+Step 1.4: Configure tailwind.config.ts and globals.css using ONLY the design tokens from MASTER.md and DESIGN.md — no ad-hoc colors or fonts.
+Step 1.5: Build the Root Layout and wire up the GsapProvider and LenisProvider.
+Step 1.6: Build the hardware-accelerated CustomCursor component.
+
+--- SKILL ACTIVATION: STAGE 1 ---
+
+PRIMARY (mandatory):
+  arm-artistry-dev     → Brand tokens, Supabase schema, IST rules, RLS — load before anything
+  ui-ux-pro-max        → Run design system generator: "luxury bridal mehendi studio, India, appointment booking, portfolio gallery"
+                         Command: python3 .claude/skills/ui-ux-pro-max/scripts/search.py "luxury bridal mehendi booking portfolio India" --design-system --persist -p "ARM-Artistry"
+                         Output saved to: design-system/MASTER.md
+
+SUPPORTING:
+  awesome-design-md    → Pick 1-2 DESIGN.md files from awesome-design-md-main/ that match the brand. Copy chosen file to project root.
+                         Recommended brands: Airbnb (warm, photography-driven, rounded) or Starbucks (earth tones, premium feel, warm canvas)
+
+SKIP: All other skills — no UI code yet, no testing yet.
+
+--- STAGE 1 MASTER EXECUTION PROMPT ---
+"You are an Elite Frontend Architect and Design System Engineer.
+
+BEFORE writing a single line of code, you must:
+1. Run the UI UX Pro Max design system generator for 'luxury bridal mehendi studio, appointment booking, India' and save the output to design-system/MASTER.md.
+2. Open awesome-design-md-main/, find the DESIGN.md whose visual language best matches ARM Artistry, and copy it to the project root.
+3. Read arm-artistry-dev SKILL.md for brand tokens and technical rules.
+All tokens, fonts, and colors used in globals.css and tailwind.config.ts MUST come from these three sources — never invent values.
+
+Build: Implement the Next.js foundation, wiring lenis smooth scrolling directly into the gsap.ticker to prevent double-RAF memory leaks. Build the CustomCursor using gsap.quickTo and raw DOM refs — absolutely no React state for cursor tracking.
+Review & Fix: Run a static analysis on your code. Are the Tailwind variables correct? Is the viewport safe for iOS Safari (100dvh)?
+Verify: Ensure the application compiles without a single ESLint or TypeScript warning. Confirm design-system/MASTER.md exists and all CSS variables match it.
+Improvise: If you see an opportunity to optimize font loading or improve the GSAP cleanup phase (useLayoutEffect vs useEffect), implement it safely. Your final output must be a dark luxury stone canvas that scrolls like butter."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAGE 2: Static Visual Scaffolding (No Backend)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Build the "dumb" UI. Hardcode the text and images just to get the layout perfect and animations firing. Every component must follow MASTER.md and the root DESIGN.md — no deviation.
+
+Step 2.1: Build the Navbar and Footer components.
+Step 2.2: Build the Homepage (Hero, Philosophy, Services Preview, Portfolio Teaser).
+Step 2.3: Build the standalone Services and Portfolio pages (using static placeholder data).
+Step 2.4: Build the visual layout for the Booking Calendar and Form (inputs only, no state machine yet).
+Step 2.5: After each page — run /impeccable audit to catch a11y, contrast, and responsive issues.
+Step 2.6: After all pages — run /impeccable polish for final shipping readiness check.
+
+--- SKILL ACTIVATION: STAGE 2 ---
+
+PRIMARY (mandatory):
+  arm-artistry-dev         → Active throughout. All components must use brand tokens from this skill.
+  frontend-design          → Active throughout. Enforces distinctive typography, custom grids, GSAP motion, CSS custom properties. Prevents AI slop.
+  taste-skill              → Use variant: high-end-visual-design (soft-skill) — polished, calm, premium. GSAP enforced.
+                             Dials: DESIGN_VARIANCE=7, MOTION_INTENSITY=6, VISUAL_DENSITY=4
+  impeccable               → Run after EACH page is built:
+                               /impeccable audit       → a11y, performance, responsive checks
+                               /impeccable polish      → final pass before moving on
+                               /impeccable typeset     → fix font hierarchy if needed
+                             Run CLI scan after all pages: npx impeccable detect src/
+
+SUPPORTING:
+  awesome-design-md        → DESIGN.md already in project root — AI reads it automatically for all component styling decisions.
+
+SKIP: SkillUI (no competitor scraping needed yet), Playwright (no live site yet), UI UX Pro Max (design system already generated in Stage 1).
+
+--- STAGE 2 MASTER EXECUTION PROMPT ---
+"You are an Award-Winning UI/UX Developer operating under strict design system constraints.
+
+BEFORE writing any component:
+1. Read design-system/MASTER.md — all colors, fonts, and spacing must come from here.
+2. Read the DESIGN.md in the project root — all component styles must match this visual language.
+3. Read arm-artistry-dev SKILL.md — brand personality and ARM Artistry-specific tokens.
+4. Activate the taste-skill high-end-visual-design (soft-skill) variant for all output.
+
+Build: Scaffold the UI using hardcoded placeholder data. Implement staggered GSAP entrance animations and ScrollTrigger reveals. Ensure absolute zero Cumulative Layout Shift (CLS) by hardcoding image aspect ratios.
+After EACH page, run: /impeccable audit [page-name] and fix every flagged issue before starting the next page.
+Review & Fix: Aggressively test your layout mentally against mobile viewports (375px, 768px, 1440px). Fix any horizontal overflow caused by GSAP transforms. Ensure all ScrollTrigger instances are properly wrapped in gsap.context() for React unmount cleanup.
+Verify: Run 'npx impeccable detect src/' and resolve all flagged anti-patterns. The UI must look indistinguishable from a premium luxury brand. No gray text on colored backgrounds. No Inter font unless specified in MASTER.md. No bounce/elastic easing.
+Improvise: If adding a subtle parallax effect or a magnetic hover effect on buttons elevates the luxury feel without hurting performance, add it. The final output must be structurally flawless and ready to receive live data."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAGE 3: The Supabase Brain (Backend Only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Wire up the database and API routes. No React code. This stage is about data integrity, atomic locking, and timezone mathematics.
+
+Step 3.1: Execute the unified Schema SQL in your Supabase dashboard (Tables, RLS, hold_slot RPC).
+Step 3.2: Write the 3 Supabase utility clients (client.ts, server.ts, admin.ts).
+Step 3.3: Build the GET /api/availability route (with date-fns-tz timezone safety).
+Step 3.4: Build the atomic POST /api/bookings/hold and confirm routes.
+
+--- SKILL ACTIVATION: STAGE 3 ---
+
+PRIMARY (mandatory):
+  arm-artistry-dev     → CRITICAL. Contains the exact RLS policies, hold_slot RPC signature, IST timezone rules, Supabase schema.
+                         Read every line of this skill before writing a single SQL statement.
+
+ALL OTHER SKILLS: SKIP — this stage is pure backend. Correctness and security over everything.
+
+--- STAGE 3 MASTER EXECUTION PROMPT ---
+"You are a Principal Backend Architect. Execute Stage 3 focusing entirely on data integrity, atomic locking, and timezone mathematics.
+
+BEFORE writing any code:
+1. Read arm-artistry-dev SKILL.md in full — every SQL statement, every RLS policy, every API route must comply with its rules.
+
+Build: Write the Postgres schema with watertight Row Level Security (RLS). Implement the Next.js API routes for availability and booking.
+Review & Fix: Scrutinize your timezone logic. Are you explicitly using date-fns-tz to force IST evaluations on a UTC server? Review the hold_slot logic — is it vulnerable to race conditions? If so, enforce an atomic Postgres RPC transaction.
+Verify: Ensure that if two users request the same slot at the exact same millisecond, the database firmly rejects one with a 409 Conflict. Test this logic mentally with a step-by-step concurrency trace.
+Improvise: If you identify a missing database index that would speed up availability queries, or a better way to structure the Supabase server client to avoid cookie errors, implement it. The final backend must be an impenetrable fortress."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAGE 4: Connecting the Nerves (Frontend ↔ Backend) + Deep Polish
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Replace Stage 2 hardcoded data with Stage 3 live data. Then run a full design audit and elevate the UI to its final form.
+
+Step 4.1: Connect the Services and Portfolio pages to fetch live data from Supabase.
+Step 4.2: Wire the Booking UI to the API (the full IDLE → HOLDING → CONFIRMED state machine).
+Step 4.3: Build the Magic Link /login page and the Next.js Auth Middleware.
+Step 4.4: Build the protected Client /portal so clients can see their bookings.
+Step 4.5: Run /impeccable overdrive on Hero, Booking, and Portfolio pages for technically extraordinary effects.
+Step 4.6: Run /impeccable animate for purposeful, brand-consistent motion.
+Step 4.7: Run /impeccable critique [every page] for full UX design review.
+
+--- SKILL ACTIVATION: STAGE 4 ---
+
+PRIMARY (mandatory):
+  arm-artistry-dev     → Active throughout. All data shapes and auth rules come from here.
+  impeccable           → This is Impeccable's most important stage:
+                           /impeccable overdrive   → Extraordinary visual effects on Hero + Portfolio
+                           /impeccable animate     → Purposeful motion — not gratuitous
+                           /impeccable critique    → Full UX design review of every page
+                           /impeccable harden      → Error handling, i18n, text overflow, edge cases
+                           /impeccable adapt       → Responsive adaptation for all viewports
+
+SUPPORTING:
+  taste-skill          → Switch to 'redesign-existing-projects' variant since UI now exists.
+                         Use to audit and fix layout, spacing, hierarchy before final QA.
+
+SKIP: UI UX Pro Max (design system fixed), SkillUI (no scraping needed), Playwright (testing is Stage 5).
+
+--- STAGE 4 MASTER EXECUTION PROMPT ---
+"You are an Elite Full-Stack Integration Engineer and Senior Design Reviewer.
+
+INTEGRATION:
+Build: Replace all static mocks with live Supabase fetches. Implement the complex state machine in the Booking Calendar (Idle -> Fetching -> Holding -> Form -> Success).
+Review & Fix: Look for edge cases. What happens if the user's internet drops during a booking hold? What happens if they enter an invalid email for the magic link? Add robust error boundaries, loading spinners, and graceful fallback UI.
+Verify: Ensure the middleware correctly bounces unauthenticated users away from /portal back to /login without endless redirect loops.
+
+POLISH (run after integration is confirmed working):
+1. Run /impeccable overdrive on the Hero section and Portfolio page — push the visual quality to technically extraordinary.
+2. Run /impeccable animate — add purposeful motion that feels native to a luxury brand.
+3. Run /impeccable critique on every page — treat this as a senior designer reviewing your work.
+4. Run /impeccable harden — add all edge case UI (empty states, loading states, error boundaries).
+5. Switch taste-skill to 'redesign-existing-projects' variant and run an audit of the full codebase.
+Improvise: If you can improve the user experience — such as adding a visual countdown timer for the 15-minute slot hold, or a smooth page transition between routes — build it. The final integration must feel seamless, fast, and completely bug-free."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAGE 5: Admin, Automation & Deployment (Final QA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Goal: Give Ayushi control, automate the emails, run full end-to-end tests, and deploy.
+
+Step 5.1: Build the Admin API endpoints (PATCH booking status, Cloudinary Image Upload).
+Step 5.2: Build the /admin Dashboard UI (Bookings Table, Portfolio Manager).
+Step 5.3: Write the src/lib/email.ts module with the 4 Resend HTML templates and wire them to the API.
+Step 5.4: Write the GET /api/cron/reminders route for Vercel's nightly trigger.
+Step 5.5: Install Playwright CLI and write automated tests for the full booking flow.
+Step 5.6: Run the full test suite. Capture screenshots and a session video as proof of correctness.
+Step 5.7: Run final impeccable detect scan. Zero anti-patterns allowed before deployment.
+Step 5.8: Deploy to Vercel. Verify env vars, cron secret, and Supabase connection in production.
+
+--- SKILL ACTIVATION: STAGE 5 ---
+
+PRIMARY (mandatory):
+  arm-artistry-dev       → Admin role checks, email template specs, Cloudinary rules, cron secret pattern.
+  playwright-cli         → PRIMARY TESTING TOOL. Install and use for all E2E tests.
+                           Install: npm install -g @playwright/cli@latest && playwright-cli install --skills
+                           Key test flows to automate:
+                             1. Full booking flow: open site → pick date → hold slot → fill form → confirm → check email
+                             2. Concurrency test: two sessions race for same slot → one gets 409
+                             3. Auth flow: access /portal without login → redirected to /login → magic link → access granted
+                             4. Admin flow: login as admin → view bookings table → change status → upload portfolio image
+                             5. Mobile viewport: run all flows at 375px width
+                           Capture: playwright-cli screenshot after each successful flow
+                           Record: playwright-cli video-start before full booking flow, playwright-cli video-stop after
+  webapp-testing         → Provides Playwright test templates and local server setup. Use alongside playwright-cli.
+  impeccable (CLI)       → Final gate before deployment:
+                           Run: npx impeccable detect src/ --json
+                           Run: npx impeccable detect https://your-vercel-preview-url.vercel.app
+                           ZERO anti-patterns allowed to pass.
+
+SKIP: All design skills (UI is locked), UI UX Pro Max (done), Taste Skill (done).
+
+--- STAGE 5 MASTER EXECUTION PROMPT ---
+"You are a Lead DevOps & Systems Engineer and Senior QA Automation Engineer.
+
+BUILD:
+Construct the Admin dashboard behind strict role-based access checks. Implement Node buffer streaming for Cloudinary uploads to avoid Vercel memory limits. Build the Resend email templates and the secure Vercel Cron endpoint.
+
+TESTING (non-negotiable — do not skip):
+1. Install Playwright CLI: npm install -g @playwright/cli@latest && playwright-cli install --skills
+2. Open the local dev server: playwright-cli open http://localhost:3000 --headed
+3. Automate the complete booking flow end-to-end. Capture a screenshot at each step.
+4. Simulate the concurrency race condition — two browser sessions competing for the same slot.
+5. Test the auth redirect loop protection — verify /portal is unreachable without a valid session.
+6. Test all flows at 375px mobile viewport.
+7. Record a full session video of the booking flow as proof: playwright-cli video-start, complete the flow, playwright-cli video-stop.
+
+FINAL QA GATE:
+Run: npx impeccable detect src/
+Run: npx impeccable detect [vercel preview URL]
+Every flagged anti-pattern must be fixed before deployment is allowed.
+
+Review & Fix: Test your admin route protection — can a standard user spoof an admin request? (They shouldn't be able to). Are your email dispatches wrapped in try/catch blocks so a failed email doesn't crash a successful database update?
+Verify: Ensure the cron endpoint requires a secure Authorization header matching the CRON_SECRET. Verify all Vercel env vars are set correctly in production.
+Improvise: If the Cloudinary upload can be optimized to automatically generate and save webp thumbnails, implement it. Make sure the admin experience is just as premium and bug-free as the client experience.
+The site is only considered DONE when: (1) All Playwright tests pass, (2) impeccable detect reports zero issues, (3) the production URL is live and fully functional."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GLOBAL RULES (apply to every stage)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Chain of Thought: Before writing code, write out your reasoning. Identify risks. Then code.
+2. No hallucinated libraries: Only use dependencies listed in arm-artistry-dev SKILL.md.
+3. Design system discipline: Never use a color, font, or spacing value not in design-system/MASTER.md.
+4. Timezone rule: All date operations use date-fns-tz with Asia/Kolkata (IST). No exceptions.
+5. Zero warnings: Every stage must compile with zero ESLint and TypeScript errors/warnings.
+6. Anti-slop rule: If any generated UI reminds you of a generic SaaS template, stop and redesign it.
+7. Skill loading order: arm-artistry-dev FIRST, then stage-specific skills, then write code.
