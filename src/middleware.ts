@@ -19,6 +19,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/portal", request.url));
   }
 
+  // Protect /admin and /api/admin routes
+  if (path.startsWith("/admin") || path.startsWith("/api/admin")) {
+    if (!user || user.email !== process.env.ADMIN_EMAIL) {
+      // Bounce unauthorized requests to home page (security through obscurity)
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
   return supabaseResponse;
 }
 

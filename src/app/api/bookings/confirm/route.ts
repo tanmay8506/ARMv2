@@ -33,17 +33,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking hold has expired" }, { status: 410 }); // 410 Gone
     }
 
-    // 3. Confirm the booking
-    const { error: updateError } = await supabase
+    // 3. Update the booking to 'pending' (requires admin approval)
+    const { data: updatedBooking, error: updateError } = await supabase
       .from("bookings")
-      .update({ status: "confirmed", updated_at: new Date().toISOString() })
-      .eq("id", booking_id);
+      .update({ status: "pending", updated_at: new Date().toISOString() })
+      .eq("id", booking_id)
+      .select("id, start_time, service_tiers(title)")
+      .single();
 
-    if (updateError) {
-      throw updateError;
+    if (updateError || !updatedBooking) {
+      throw updateError || new Error("Failed to update booking");
     }
 
-    return NextResponse.json({ success: true, status: "confirmed" }, { status: 200 });
+    // 4. Send Receipt Email (wrapped in try/catch to protect DB transaction)
+    try {
+      const { resend } = await import("@/lib/resend/client");
+      const ReceiptEmail = (await import("@/components/emails/ReceiptEmail")).default;
+      
+      await resend.emails.send({
+        from: "ARM Artistry <onboarding@resend.dev>",
+        to: "client@example.com", // In a real app, use the email from the form payload
+        subject: "Booking Request Received - ARM Artistry",
+        react: ReceiptEmail({
+          clientEmail: "client@example.com",
+          serviceTitle: (updatedBooking.service_tiers as unknown as { title: string } | null)?.title || "Service",
+          bookingTime: new Date(updatedBooking.start_time).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+          bookingId: updatedBooking.id.split("-")[0],
+        }),
+      });
+    } catch (emailErr) {
+      console.error("Failed to send receipt email:", emailErr);
+      // We don't throw here because the database update was successful.
+    }
+
+    return NextResponse.json({ success: true, status: "pending" }, { status: 200 });
 
   } catch (error: unknown) {
     console.error("Confirm Booking Error:", error);
