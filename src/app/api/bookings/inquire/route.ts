@@ -131,28 +131,28 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fire-and-forget emails via EmailJS REST API
-    (async () => {
-      try {
-        const serviceTitle =
-          ((newBooking.service_tiers as unknown) as { title: string } | null)
-            ?.title || tier.title;
+    // Send emails via EmailJS REST API and await them so serverless execution doesn't freeze/terminate early
+    try {
+      const serviceTitle =
+        ((newBooking.service_tiers as unknown) as { title: string } | null)
+          ?.title || tier.title;
 
-        const ejsBase = {
-          service_id: process.env.EMAILJS_SERVICE_ID!,
-          user_id: process.env.EMAILJS_PUBLIC_KEY!,
-          accessToken: process.env.EMAILJS_PRIVATE_KEY!,
-        };
+      const ejsBase = {
+        service_id: process.env.EMAILJS_SERVICE_ID!,
+        user_id: process.env.EMAILJS_PUBLIC_KEY!,
+        accessToken: process.env.EMAILJS_PRIVATE_KEY!,
+      };
 
-        const sendEmail = (template_id: string, template_params: Record<string, string>) =>
-          fetch("https://api.emailjs.com/api/v1.0/email/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...ejsBase, template_id, template_params }),
-          });
+      const sendEmail = (template_id: string, template_params: Record<string, string>) =>
+        fetch("https://api.emailjs.com/api/v1.0/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...ejsBase, template_id, template_params }),
+        });
 
-        // 1. Client confirmation email
-        const clientRes = await sendEmail(process.env.EMAILJS_CLIENT_TEMPLATE_ID!, {
+      // Run both email sends concurrently and await their completion
+      const [clientRes, adminRes] = await Promise.all([
+        sendEmail(process.env.EMAILJS_CLIENT_TEMPLATE_ID!, {
           to_name: client_name.split(" ")[0],
           to_email: client_email,
           service: serviceTitle,
@@ -160,13 +160,8 @@ export async function POST(request: Request) {
           event_date: bookingTimeIST,
           city: event_city || "Varanasi",
           booking_id: shortId,
-        });
-        if (!clientRes.ok) {
-          console.error("Client email failed:", await clientRes.text());
-        }
-
-        // 2. Admin notification email
-        const adminRes = await sendEmail(process.env.EMAILJS_ADMIN_TEMPLATE_ID!, {
+        }),
+        sendEmail(process.env.EMAILJS_ADMIN_TEMPLATE_ID!, {
           full_name: client_name,
           email: client_email,
           phone: client_phone,
@@ -179,14 +174,23 @@ export async function POST(request: Request) {
           estimated_total: `₹${estimatedTotal.toLocaleString("en-IN")}`,
           notes: notes || "",
           booking_id: shortId,
-        });
-        if (!adminRes.ok) {
-          console.error("Admin email failed:", await adminRes.text());
-        }
-      } catch (emailErr) {
-        console.error("Failed to send emails:", emailErr);
+        })
+      ]);
+
+      if (!clientRes.ok) {
+        console.error("Client email failed:", await clientRes.text());
+      } else {
+        console.log("Client email sent successfully");
       }
-    })();
+
+      if (!adminRes.ok) {
+        console.error("Admin email failed:", await adminRes.text());
+      } else {
+        console.log("Admin email sent successfully");
+      }
+    } catch (emailErr) {
+      console.error("Failed to send emails:", emailErr);
+    }
 
     return NextResponse.json(
       {

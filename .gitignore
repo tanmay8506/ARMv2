@@ -38,3 +38,5 @@ next-env.d.ts
 # credentials (never commit)
 .supabase-creds.txt
 *.creds.txt
+
+.vercel
