@@ -1,6 +1,7 @@
 import { test, expect, chromium } from "@playwright/test";
 import * as path from "path";
 import * as fs from "fs";
+import { createClient } from "@supabase/supabase-js";
 
 const SCREENSHOTS_DIR = path.join(__dirname, "screenshots");
 const VIDEOS_DIR = path.join(__dirname, "videos");
@@ -11,6 +12,81 @@ const VIDEOS_DIR = path.join(__dirname, "videos");
 });
 
 const BASE_URL = "http://localhost:3000";
+
+// Load .env.local variables manually
+const envPath = path.resolve(process.cwd(), ".env.local");
+if (fs.existsSync(envPath)) {
+  const content = fs.readFileSync(envPath, "utf-8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const index = trimmed.indexOf("=");
+    if (index === -1) continue;
+    const key = trimmed.substring(0, index).trim();
+    const val = trimmed.substring(index + 1).trim().replace(/^['"]|['"]$/g, "");
+    process.env[key] = val;
+  }
+}
+
+async function loginAsAdmin(page: any, baseURL: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const adminEmail = process.env.ADMIN_EMAIL || "tanmay8506@gmail.com";
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env");
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // 1. Ensure user exists and is confirmed
+  try {
+    await supabase.auth.admin.createUser({
+      email: adminEmail,
+      email_confirm: true,
+    });
+  } catch (e) {
+    // Already exists
+  }
+
+  // 2. Generate magic link to get the token hash
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: "magiclink",
+    email: adminEmail,
+  });
+
+  if (error || !data?.properties?.hashed_token) {
+    throw new Error(`Failed to generate magic link: ${error?.message || "unknown error"}`);
+  }
+
+  // 3. Verify OTP in Node to get tokens
+  const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: data.properties.hashed_token,
+    type: "magiclink",
+  });
+
+  if (verifyError || !verifyData?.session) {
+    throw new Error(`Failed to verify OTP: ${verifyError?.message || "unknown error"}`);
+  }
+
+  // 4. Inject Supabase auth cookie directly into browser context
+  const cookieName = "sb-pykxpfyfvgkggcdvqyfd-auth-token";
+  const cookieValue = "base64-" + Buffer.from(JSON.stringify(verifyData.session)).toString("base64");
+
+  const domain = new URL(baseURL).hostname;
+
+  await page.context().addCookies([
+    {
+      name: cookieName,
+      value: cookieValue,
+      domain: domain === "localhost" ? "localhost" : domain,
+      path: "/",
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax",
+    },
+  ]);
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // SUITE 1: Homepage & Navigation
@@ -471,6 +547,169 @@ test.describe("Session Video — Complete Booking Flow", () => {
         }
         console.log(`[Video] Session recorded: ${newName}`);
       }
+    }
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// SUITE 8: Admin Control Centre Operations
+// ────────────────────────────────────────────────────────────────────────────
+test.describe("Admin Control Centre", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    // Authenticate as admin before each test
+    await loginAsAdmin(page, baseURL || "http://localhost:3000");
+    // Go to admin page
+    await page.goto(`${baseURL || "http://localhost:3000"}/admin`);
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("admin settings: update working hours", async ({ page }) => {
+    // Navigate to Settings tab
+    const settingsTab = page.locator("button:has-text('Settings')");
+    await settingsTab.click();
+    await page.waitForTimeout(500);
+
+    // Verify settings fields are visible
+    const startInput = page.locator("input[placeholder='09:00:00']").first();
+    const endInput = page.locator("input[placeholder='18:00:00']").first();
+    await expect(startInput).toBeVisible();
+    await expect(endInput).toBeVisible();
+
+    // Fill in values
+    await startInput.fill("10:00:00");
+    await endInput.fill("18:00:00");
+
+    // Submit settings form
+    const saveSettingsBtn = page.locator("button:has-text('Save Settings')");
+    await saveSettingsBtn.click();
+    await page.waitForTimeout(1000);
+
+    // Take screenshot of saved settings
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, "22-admin-settings-saved.png"),
+    });
+  });
+
+  test("admin services: CRUD operations", async ({ page }) => {
+    // Navigate to Settings tab
+    const settingsTab = page.locator("button:has-text('Settings')");
+    await settingsTab.click();
+    await page.waitForTimeout(500);
+
+    // 1. Create a service
+    const titleInput = page.locator("input[placeholder*='Deluxe Arabic' i]").first();
+    const descInput = page.locator("textarea[placeholder*='what is included' i]").first();
+    const durationInput = page.locator("input[type='number']").first(); // Duration is first number input
+    const priceInput = page.locator("input[type='number']").nth(1); // Price is second number input
+
+    await titleInput.fill("E2E Test Package");
+    await descInput.fill("Temporary package created by Playwright");
+    await durationInput.fill("90");
+    await priceInput.fill("5000");
+
+    const addBtn = page.locator("button:has-text('Create Package')");
+    await addBtn.click();
+    await page.waitForTimeout(1500);
+
+    // Verify service appears in list
+    const serviceRow = page.locator("h4:has-text('E2E Test Package')").first();
+    await expect(serviceRow).toBeVisible();
+
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, "23-admin-service-created.png"),
+    });
+
+    // 2. Toggle active/inactive
+    const h4BeforeToggle = page.locator("h4:has-text('E2E Test Package')").first();
+    const toggleRow = h4BeforeToggle.locator("xpath=ancestor::div[contains(@class, 'justify-between')][1]");
+    const activeStatusBtn = toggleRow.locator("button[title='Deactivate']").first();
+    await activeStatusBtn.click();
+    await page.waitForTimeout(1000);
+
+    // 3. Edit service
+    // Click edit/save button for our test package
+    const h4 = page.locator("h4:has-text('E2E Test Package')").first();
+    const cardRow = h4.locator("xpath=ancestor::div[contains(@class, 'justify-between')][1]");
+    const editBtn = cardRow.locator("button[title='Edit']").first();
+    await editBtn.click();
+    await page.waitForTimeout(500);
+
+    const cancelBtn = page.locator("button:has-text('Cancel')").first();
+    const editCard = cancelBtn.locator("xpath=ancestor::div[contains(@class, 'border')][1]");
+    const editTitleInput = editCard.locator("input[type='text']").first();
+    await editTitleInput.fill("E2E Test Package (Edited)");
+    
+    const saveBtn = editCard.locator("button:has-text('Save')").first();
+    await saveBtn.click();
+    await page.waitForTimeout(1000);
+
+    // Verify title updated
+    const editedRow = page.locator("h4:has-text('E2E Test Package (Edited)')").first();
+    await expect(editedRow).toBeVisible();
+
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, "24-admin-service-edited.png"),
+    });
+
+    // 4. Delete service
+    // Accept confirm dialog automatically
+    page.once("dialog", (dialog) => dialog.accept());
+    const h4Edited = page.locator("h4:has-text('E2E Test Package (Edited)')").first();
+    const deleteRow = h4Edited.locator("xpath=ancestor::div[contains(@class, 'justify-between')][1]");
+    const deleteBtn = deleteRow.locator("button[title='Delete']").first();
+    await deleteBtn.click();
+    await page.waitForTimeout(1500);
+
+    // Verify deleted
+    await expect(page.locator("h4:has-text('E2E Test Package (Edited)')")).not.toBeVisible();
+
+    await page.screenshot({
+      path: path.join(SCREENSHOTS_DIR, "25-admin-service-deleted.png"),
+    });
+  });
+
+  test("admin portfolio: update details & active status", async ({ page }) => {
+    // Navigate to Portfolio tab
+    const portfolioTab = page.locator("button:has-text('Portfolio')");
+    await portfolioTab.click();
+    await page.waitForTimeout(500);
+
+    // Verify portfolio manager is visible
+    const existingHeader = page.locator("h3:has-text('Existing Artwork Gallery')").first();
+    await expect(existingHeader).toBeVisible();
+
+    // Check if we have at least one asset to test
+    const firstAssetCard = page.locator("div:has(h4)").first();
+    const hasAssets = await firstAssetCard.isVisible().catch(() => false);
+
+    if (hasAssets) {
+      // 1. Edit asset details
+      const firstAssetTitle = await page.locator("h4").first().textContent();
+      const editBtn = page.locator("button:has-text('Edit')").first();
+      await editBtn.click();
+      await page.waitForTimeout(500);
+
+      // Locate editing inputs
+      const editTitleInput = page.locator("input[placeholder='Title']").first();
+      await editTitleInput.fill("E2E Test Artwork Name");
+      
+      const saveBtn = page.locator("button:has-text('Save')").first();
+      await saveBtn.click();
+      await page.waitForTimeout(1000);
+
+      // Verify edited title
+      await expect(page.locator("h4:has-text('E2E Test Artwork Name')")).toBeVisible();
+
+      // Restore it back to original title or edit again
+      await page.locator("button:has-text('Edit')").first().click();
+      await page.waitForTimeout(500);
+      await page.locator("input[placeholder='Title']").first().fill(firstAssetTitle || "Artwork");
+      await page.locator("button:has-text('Save')").first().click();
+      await page.waitForTimeout(1000);
+
+      await page.screenshot({
+        path: path.join(SCREENSHOTS_DIR, "26-admin-portfolio-edited.png"),
+      });
     }
   });
 });

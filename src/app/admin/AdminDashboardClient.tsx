@@ -18,12 +18,56 @@ import PortfolioUploader from "./PortfolioUploader";
 import SettingsControl from "./SettingsControl";
 import PortfolioManager from "./PortfolioManager";
 
+interface Settings {
+  id?: string;
+  working_hours_start: string;
+  working_hours_end: string;
+  timezone: string;
+}
+
+interface ServiceTier {
+  id: string;
+  title: string;
+  description: string | null;
+  duration_minutes: number;
+  price_inr: number;
+  is_active: boolean;
+}
+
+interface PortfolioAsset {
+  id: string;
+  title: string;
+  category: string;
+  cloudinary_path: string;
+  width: number;
+  height: number;
+  display_order: number;
+  is_active: boolean;
+}
+
+interface Booking {
+  id: string;
+  client_id: string | null;
+  client_name: string | null;
+  client_email: string | null;
+  client_phone: string | null;
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  service_tiers?: {
+    title: string;
+  } | null;
+}
+
 interface AdminDashboardClientProps {
   userEmail: string;
-  initialBookings: any[];
-  initialSettings: any;
-  initialServiceTiers: any[];
-  initialPortfolioAssets: any[];
+  initialBookings: Booking[];
+  initialSettings: Settings | null;
+  initialServiceTiers: ServiceTier[];
+  initialPortfolioAssets: PortfolioAsset[];
 }
 
 type Tab = "bookings" | "portfolio" | "settings";
@@ -36,7 +80,7 @@ export default function AdminDashboardClient({
   initialPortfolioAssets,
 }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("bookings");
-  const [bookings, setBookings] = useState<any[]>(initialBookings);
+  const bookings = initialBookings;
 
   // Calculate stats
   const pending = bookings.filter((b) => b.status === "pending").length;
@@ -226,7 +270,7 @@ export default function AdminDashboardClient({
                             {b.notes && (
                               <div>
                                 <p className="text-white/30 uppercase tracking-wider mb-1">Notes & Inspiration</p>
-                                <p className="text-smoke italic leading-relaxed">"{b.notes}"</p>
+                                <p className="text-smoke italic leading-relaxed">&ldquo;{b.notes}&rdquo;</p>
                               </div>
                             )}
                           </div>

@@ -54,7 +54,7 @@ export const AdminNotificationEmail = ({
           {notes && (
             <>
               <Text style={fieldLabel}>Client Notes</Text>
-              <Text style={fieldValueItalic}>"{notes}"</Text>
+              <Text style={fieldValueItalic}>&ldquo;{notes}&rdquo;</Text>
             </>
           )}
 

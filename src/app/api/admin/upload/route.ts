@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 // Node.js runtime — required for Buffer streaming (avoids Vercel memory limits)
@@ -21,8 +21,18 @@ interface CloudinaryUploadResult {
   format: string;
 }
 
+async function isAdmin() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user && user.email === process.env.ADMIN_EMAIL;
+}
+
 export async function POST(request: Request) {
   try {
+    if (!await isAdmin()) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const category = (formData.get("category") as string) || "portfolio";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Loader2, Trash2, Power, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, Trash2, Power, Save } from "lucide-react";
 
 interface PortfolioAsset {
   id: string;
