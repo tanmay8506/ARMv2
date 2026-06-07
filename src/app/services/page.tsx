@@ -1,7 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Sparkles, Camera, Crown, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -79,10 +77,7 @@ export default async function ServicesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans flex flex-col justify-between">
-      <Navbar />
-      
-      <main className="max-w-[1200px] mx-auto px-6 py-32 flex-1 w-full">
+    <main className="max-w-[1200px] mx-auto px-6 py-32 flex-1 w-full min-h-[calc(100vh-16rem)]">
         {/* Header */}
         <div className="text-center max-w-[800px] mx-auto mb-20 animate-in fade-in duration-1000">
           <span className="text-lamborghini-gold text-xs uppercase tracking-[0.25em] font-semibold block mb-4">
@@ -349,10 +344,7 @@ export default async function ServicesPage() {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer />
-    </div>
+    </main>
   );
 }
 

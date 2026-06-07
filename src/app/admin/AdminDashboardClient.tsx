@@ -57,6 +57,13 @@ interface Booking {
   notes: string | null;
   admin_notes: string | null;
   created_at: string;
+  // New inquiry fields
+  location_type: string | null;
+  event_city: string | null;
+  event_venue: string | null;
+  event_type: string | null;
+  ready_by_time: string | null;
+  guest_count: number | null;
   service_tiers?: {
     title: string;
   } | null;
@@ -267,8 +274,25 @@ export default function AdminDashboardClient({
                               <p className="text-white/50 font-mono mt-0.5">{b.client_email || "N/A"}</p>
                               <p className="text-white/50 font-mono mt-0.5">{b.client_phone || "N/A"}</p>
                             </div>
+                            <div>
+                              <p className="text-white/30 uppercase tracking-wider mb-1">Event Details</p>
+                              {b.event_type && <p className="text-white/70 mt-0.5">{b.event_type}</p>}
+                              {b.event_city && (
+                                <p className="text-white/50 mt-0.5">
+                                  {b.location_type === "outstation" ? "✈ " : "📍 "}
+                                  {b.event_city}
+                                  {b.event_venue ? ` · ${b.event_venue}` : ""}
+                                </p>
+                              )}
+                              {b.guest_count != null && b.guest_count > 0 && (
+                                <p className="text-white/50 mt-0.5">{b.guest_count} guests</p>
+                              )}
+                              {b.ready_by_time && (
+                                <p className="text-white/50 mt-0.5">Ready by {b.ready_by_time} IST</p>
+                              )}
+                            </div>
                             {b.notes && (
-                              <div>
+                              <div className="col-span-full">
                                 <p className="text-white/30 uppercase tracking-wider mb-1">Notes & Inspiration</p>
                                 <p className="text-smoke italic leading-relaxed">&ldquo;{b.notes}&rdquo;</p>
                               </div>

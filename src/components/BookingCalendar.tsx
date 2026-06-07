@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowUpRight, Loader2, Calendar as CalendarIcon, Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import {
+  ArrowUpRight,
+  ArrowLeft,
+  Loader2,
+  CheckCircle,
+  Sparkles,
+  MapPin,
+  Calendar,
+  User,
+} from "lucide-react";
 
-type BookingState = "IDLE" | "SLOTS" | "HOLDING" | "FORM" | "SUBMITTING" | "SUCCESS" | "ERROR";
-
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface ServiceTier {
   id: string;
   title: string;
@@ -14,394 +21,945 @@ interface ServiceTier {
   price_inr: number;
 }
 
-export default function BookingCalendar() {
-  const searchParams = useSearchParams();
-  const tierParam = searchParams ? searchParams.get("tier") : null;
+type WizardStep = 1 | 2 | 3 | 4;
 
-  const [state, setState] = useState<BookingState>("IDLE");
+type WizardState = "WIZARD" | "SUBMITTING" | "SUCCESS" | "ERROR";
+
+interface FormData {
+  // Step 1
+  service_tier_id: string;
+  event_type: string;
+  event_date: string;
+  ready_by_time: string;
+  // Step 2
+  location_type: "local" | "outstation";
+  event_city: string;
+  event_venue: string;
+
+  // Step 3
+  client_name: string;
+  client_email: string;
+  client_phone: string;
+  notes: string;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+
+
+
+const getTomorrowStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+};
+
+const getMaxDateStr = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 2);
+  return d.toISOString().split("T")[0];
+};
+
+// ─── Step Indicator ───────────────────────────────────────────────────────────
+const STEPS = [
+  { num: 1, label: "Event" },
+  { num: 2, label: "Venue" },
+  { num: 3, label: "Contact" },
+  { num: 4, label: "Review" },
+];
+
+function StepIndicator({ current }: { current: WizardStep }) {
+  return (
+    <div className="flex items-center justify-center gap-0 mb-12">
+      {STEPS.map((step, idx) => {
+        const isDone = step.num < current;
+        const isActive = step.num === current;
+        return (
+          <div key={step.num} className="flex items-center">
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className={`w-8 h-8 flex items-center justify-center text-xs font-bold font-sans transition-all duration-500 ${
+                  isDone
+                    ? "bg-lamborghini-gold text-black"
+                    : isActive
+                    ? "bg-transparent border border-lamborghini-gold text-lamborghini-gold"
+                    : "bg-transparent border border-white/20 text-white/30"
+                }`}
+              >
+                {isDone ? "✓" : step.num}
+              </div>
+              <span
+                className={`text-[9px] uppercase tracking-widest font-sans transition-colors duration-500 ${
+                  isActive
+                    ? "text-lamborghini-gold"
+                    : isDone
+                    ? "text-white/60"
+                    : "text-white/20"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+            {idx < STEPS.length - 1 && (
+              <div
+                className={`w-16 h-[1px] mx-2 mb-5 transition-all duration-700 ${
+                  isDone ? "bg-lamborghini-gold" : "bg-white/10"
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Field wrapper ────────────────────────────────────────────────────────────
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-[10px] uppercase tracking-[0.2em] text-ash font-sans font-semibold">
+        {label}
+        {required && <span className="text-lamborghini-gold ml-1">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+// ─── Input styles ─────────────────────────────────────────────────────────────
+const inputCls =
+  "w-full bg-black/40 border border-white/10 px-4 py-3.5 text-white placeholder:text-white/20 focus:outline-none focus:border-lamborghini-gold/60 focus:bg-black/60 transition-all duration-300 text-sm font-sans rounded-none appearance-none";
+
+
+
+// ─── Gold CTA Button ──────────────────────────────────────────────────────────
+function GoldButton({
+  children,
+  onClick,
+  type = "button",
+  disabled = false,
+  icon,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  type?: "button" | "submit";
+  disabled?: boolean;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className="bg-lamborghini-gold text-black flex items-center justify-center gap-4 px-8 py-4 text-xs uppercase tracking-[0.2em] font-sans font-bold transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed group w-full"
+    >
+      <span>{children}</span>
+      <div className="w-7 h-7 bg-black/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1">
+        {icon || <ArrowUpRight className="w-3.5 h-3.5 text-black" strokeWidth={2} />}
+      </div>
+    </button>
+  );
+}
+
+function GhostButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 text-ash hover:text-white transition-colors duration-300 text-xs uppercase tracking-widest font-sans"
+    >
+      <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+      {children}
+    </button>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function BookingWizard() {
+  const [step, setStep] = useState<WizardStep>(1);
+  const [state, setState] = useState<WizardState>("WIZARD");
   const [serviceTiers, setServiceTiers] = useState<ServiceTier[]>([]);
-  const [selectedTier, setSelectedTier] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [slots, setSlots] = useState<string[]>([]);
-
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(15 * 60); // 15 mins in seconds
   const [errorMessage, setErrorMessage] = useState("");
+  const [successId, setSuccessId] = useState("");
+  const topRef = useRef<HTMLDivElement>(null);
 
-  // Form states
-  const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [notes, setNotes] = useState("");
+  const [form, setForm] = useState<FormData>({
+    service_tier_id: "",
+    event_type: "Bridal",
+    event_date: getTomorrowStr(),
+    ready_by_time: "",
+    location_type: "local",
+    event_city: "Varanasi",
+    event_venue: "",
+    client_name: "",
+    client_email: "",
+    client_phone: "",
+    notes: "",
+  });
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeCategory, setActiveCategory] = useState<"makeup" | "hair">("makeup");
+  const [activeMakeupOccasion, setActiveMakeupOccasion] = useState<"bridal" | "engagement" | "haldi_mehndi" | "party">("bridal");
+  const [selectedAddon, setSelectedAddon] = useState<string>("");
 
-  // Initialize: Get tomorrow's date string & fetch service tiers
+  const toggleAddon = (title: string) => {
+    setSelectedAddon((prev) => (prev === title ? "" : title));
+  };
+
   useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setSelectedDate(tomorrow.toISOString().split("T")[0]);
+    if (activeCategory === "hair") {
+      setSelectedAddon("");
+    }
+  }, [activeCategory]);
 
-    const fetchTiers = async () => {
+  // Scroll wizard top into view on step change
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
+
+  // Fetch service tiers
+  useEffect(() => {
+    const load = async () => {
       try {
         const res = await fetch("/api/service-tiers");
         const data = await res.json();
-        if (data.tiers) {
+        if (data.tiers?.length > 0) {
           setServiceTiers(data.tiers);
-          if (data.tiers.length > 0) {
-            const matched = data.tiers.find((t: ServiceTier) => t.id === tierParam);
-            setSelectedTier(matched ? matched.id : data.tiers[0].id);
+          const firstMakeup = data.tiers.find((t: ServiceTier) => t.title.toLowerCase().includes("makeup"));
+          if (firstMakeup) {
+            setForm((f) => ({ ...f, service_tier_id: firstMakeup.id }));
+          } else {
+            setForm((f) => ({ ...f, service_tier_id: data.tiers[0].id }));
           }
         }
-      } catch (err) {
-        console.error("Failed to load tiers:", err);
+      } catch {
+        /* graceful degradation */
       }
     };
-    fetchTiers();
-  }, [tierParam]);
+    load();
+  }, []);
 
-  // Timer logic for HOLDING and FORM states
+  const set = (key: keyof FormData, value: string) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const selectedTier = serviceTiers.find((t) => t.id === form.service_tier_id);
+
+  // Get filtered tiers based on active tabs
+  const getFilteredTiers = () => {
+    if (activeCategory === "hair") {
+      return serviceTiers.filter((t) => !t.title.toLowerCase().includes("makeup"));
+    }
+    return serviceTiers.filter((t) => {
+      const title = t.title.toLowerCase();
+      if (!title.includes("makeup")) return false;
+      if (activeMakeupOccasion === "bridal") return title.includes("bridal");
+      if (activeMakeupOccasion === "engagement") return title.includes("engagement");
+      if (activeMakeupOccasion === "haldi_mehndi")
+        return title.includes("haldi") || title.includes("mehandi") || title.includes("mehndi");
+      if (activeMakeupOccasion === "party") return title.includes("party");
+      return false;
+    });
+  };
+
+  const filteredTiers = getFilteredTiers();
+
+  // Synchronize event_type based on the selected tier's title
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if ((state === "HOLDING" || state === "FORM") && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setState("ERROR");
-            setErrorMessage("Your 15-minute slot reservation has expired. Please select another slot.");
-            setBookingId(null);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (!selectedTier) return;
+    const title = selectedTier.title.toLowerCase();
+    let deducedType = "Other";
+    if (title.includes("bridal")) {
+      deducedType = "Bridal";
+    } else if (title.includes("engagement")) {
+      deducedType = "Engagement";
+    } else if (title.includes("haldi") || title.includes("mehndi") || title.includes("mehandi")) {
+      deducedType = "Mehndi Ceremony";
+    } else if (title.includes("party")) {
+      deducedType = "Other";
     }
-    return () => clearInterval(timer);
-  }, [state, timeLeft]);
+    setForm((f) => ({ ...f, event_type: deducedType }));
+  }, [selectedTier]);
 
-  // Helper to generate a client tracking UUID
-  const getClientTrackingId = () => {
-    if (typeof window === "undefined") return "00000000-0000-0000-0000-000000000001";
-    let id = localStorage.getItem("arm_client_tracking_id");
-    if (!id) {
-      id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0;
-        const v = c === "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      });
-      localStorage.setItem("arm_client_tracking_id", id);
-    }
-    return id;
-  };
-
-  // Format time (MM:SS)
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  const handleSearchSlots = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTier) return;
-    
-    setState("HOLDING");
-    setErrorMessage("");
-
-    try {
-      const tier = serviceTiers.find((t) => t.id === selectedTier);
-      const duration = tier ? tier.duration_minutes : 60;
-
-      const res = await fetch(`/api/availability?date=${selectedDate}&duration=${duration}`);
-      if (!res.ok) throw new Error("Failed to fetch slots");
-      
-      const data = await res.json();
-      setSlots(data.slots || []);
-      setState("SLOTS");
-    } catch {
-      setState("ERROR");
-      setErrorMessage("Could not load availability. Please verify your connection.");
-    }
-  };
-
-  const holdSlot = async (slotIso: string) => {
-    setState("HOLDING");
-    setTimeLeft(15 * 60);
-
-    const tier = serviceTiers.find((t) => t.id === selectedTier);
-    const duration = tier ? tier.duration_minutes : 60;
-    const endIso = new Date(new Date(slotIso).getTime() + duration * 60 * 1000).toISOString();
-
-    try {
-      const payload = {
-        client_id: getClientTrackingId(),
-        service_tier_id: selectedTier,
-        start_time: slotIso,
-        end_time: endIso,
-      };
-
-      const res = await fetch("/api/bookings/hold", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 409) {
-          throw new Error("This slot was just taken by another client. Please select another slot.");
-        }
-        throw new Error(data.error || "Failed to hold slot");
+  // Auto-select first tier in filtered list when tab changes
+  useEffect(() => {
+    if (serviceTiers.length === 0) return;
+    const filtered = getFilteredTiers();
+    if (filtered.length > 0) {
+      const hasCurrent = filtered.some((t) => t.id === form.service_tier_id);
+      if (!hasCurrent) {
+        setForm((f) => ({ ...f, service_tier_id: filtered[0].id }));
       }
-
-      setBookingId(data.booking_id);
-      setState("FORM");
-    } catch (err: unknown) {
-      setState("ERROR");
-      const error = err as Error;
-      setErrorMessage(error.message || "Failed to secure slot. Try again.");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, activeMakeupOccasion, serviceTiers]);
+
+  // ── Validation ─────────────────────────────────────────────────────────────
+  const canProceed = (s: WizardStep): boolean => {
+    if (s === 1)
+      return !!(form.service_tier_id && form.event_type && form.event_date);
+    if (s === 2)
+      return !!(form.event_city);
+    if (s === 3)
+      return !!(form.client_name && form.client_email && form.client_phone);
+    return true;
   };
 
-  const confirmBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!bookingId || !clientName || !clientEmail || !clientPhone) return;
-
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
     setState("SUBMITTING");
     try {
-      const payload = {
-        booking_id: bookingId,
-        transaction_id: "TXN-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
-        client_name: clientName,
-        client_email: clientEmail,
-        client_phone: clientPhone,
-        notes,
-      };
-
-      const res = await fetch("/api/bookings/confirm", {
+      const res = await fetch("/api/bookings/inquire", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...form,
+          hair_addon: selectedAddon,
+        }),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to confirm booking");
-      }
-
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit inquiry");
+      setSuccessId(data.short_id || "");
       setState("SUCCESS");
     } catch (err: unknown) {
+      const e = err as Error;
+      setErrorMessage(e.message || "Something went wrong. Please try again.");
       setState("ERROR");
-      const error = err as Error;
-      setErrorMessage(error.message || "Failed to finalize booking.");
     }
   };
 
-  // Get tomorrow's date string for input minimum
-  const getTomorrowString = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
-  };
+  // ─── Render: Submitting ───────────────────────────────────────────────────
+  if (state === "SUBMITTING") {
+    return (
+      <div className="min-h-[520px] flex flex-col items-center justify-center text-center">
+        <div className="relative mb-8">
+          <div className="w-16 h-16 border border-lamborghini-gold/20 absolute inset-0 animate-ping rounded-none" />
+          <Loader2 className="w-16 h-16 text-lamborghini-gold animate-spin relative" strokeWidth={0.8} />
+        </div>
+        <p className="text-white/50 font-sans text-xs uppercase tracking-[0.3em]">
+          Registering your inquiry…
+        </p>
+      </div>
+    );
+  }
 
+  // ─── Render: Success ──────────────────────────────────────────────────────
+  if (state === "SUCCESS") {
+    return (
+      <div className="min-h-[520px] flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-700">
+        {/* Radiant ring */}
+        <div className="relative mb-10">
+          <div className="absolute inset-0 w-24 h-24 rounded-none bg-lamborghini-gold/10 blur-2xl scale-150" />
+          <div className="w-24 h-24 border border-lamborghini-gold/30 flex items-center justify-center relative">
+            <CheckCircle className="w-10 h-10 text-lamborghini-gold" strokeWidth={1} />
+          </div>
+        </div>
+
+        <p className="text-lamborghini-gold text-[10px] tracking-[0.35em] uppercase font-sans mb-4">
+          Inquiry Received
+        </p>
+        <h2 className="text-3xl md:text-4xl font-heading text-white uppercase tracking-wider mb-2">
+          Thank You
+        </h2>
+        {successId && (
+          <p className="text-white/20 font-mono text-xs mb-6">Ref #{successId}</p>
+        )}
+
+        <div className="w-[1px] h-10 bg-lamborghini-gold/30 mx-auto my-4" />
+
+        <p className="text-smoke font-sans text-sm leading-relaxed max-w-[420px] mb-8">
+          Your inquiry has been registered. Our team will carefully review your
+          event details and personally respond within{" "}
+          <span className="text-lamborghini-gold font-semibold">48 hours</span>.
+          Check your inbox — we have sent a confirmation to your email.
+        </p>
+
+        <div className="bg-white/[0.02] border border-white/10 px-6 py-4 text-center mb-8">
+          <p className="text-[9px] uppercase tracking-[0.25em] text-ash mb-2">
+            For urgent queries
+          </p>
+          <p className="text-smoke text-sm font-sans">
+            tanmay8506@gmail.com
+          </p>
+          <p className="text-smoke text-sm font-sans mt-1">
+            +91 9810753003
+          </p>
+        </div>
+
+        <a
+          href="/"
+          className="border border-white/20 text-white/60 px-8 py-3 text-xs uppercase tracking-widest font-sans hover:text-white hover:border-white/40 transition-all duration-300"
+        >
+          Return Home
+        </a>
+      </div>
+    );
+  }
+
+  // ─── Render: Error ────────────────────────────────────────────────────────
+  if (state === "ERROR") {
+    return (
+      <div className="min-h-[520px] flex flex-col items-center justify-center text-center px-4 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="w-16 h-16 border border-red-500/30 bg-red-500/5 flex items-center justify-center mb-8">
+          <span className="text-red-400 text-2xl font-bold">!</span>
+        </div>
+        <h3 className="text-xl font-heading text-white uppercase tracking-wider mb-4">
+          Something Went Wrong
+        </h3>
+        <p className="text-smoke font-sans text-sm max-w-[360px] mb-8 leading-relaxed">
+          {errorMessage}
+        </p>
+        <button
+          onClick={() => {
+            setState("WIZARD");
+            setStep(1);
+            setErrorMessage("");
+          }}
+          className="border border-white/20 text-white/60 px-8 py-3 text-xs uppercase tracking-widest font-sans hover:text-white hover:border-white/40 transition-all"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // ─── Render: Wizard ───────────────────────────────────────────────────────
   return (
-    <div ref={containerRef} className="w-full max-w-[800px] mx-auto bg-white/[0.02] border border-white/10 p-8 md:p-12 min-h-[450px] flex flex-col items-center justify-center relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-none">
-      
-      {state === "IDLE" && (
-        <form onSubmit={handleSearchSlots} className="w-full flex flex-col items-center text-center">
-          <CalendarIcon className="w-12 h-12 text-lamborghini-gold mb-6 opacity-80" />
-          <h3 className="text-2xl font-heading text-white uppercase tracking-wider mb-4">Select a Session</h3>
-          <p className="text-smoke font-sans mb-8 max-w-[400px]">Choose your desired package and date to check live slot availability.</p>
+    <div ref={topRef} className="w-full max-w-[760px] mx-auto">
+      {/* Double-bezel outer frame */}
+      <div className="border border-white/[0.06] p-[1px]">
+        <div className="border border-white/[0.04] bg-white/[0.01] backdrop-blur-sm">
           
-          <div className="w-full max-w-[500px] space-y-5 mb-8 text-left">
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Service Package</label>
-              <select
-                value={selectedTier}
-                onChange={(e) => setSelectedTier(e.target.value)}
-                className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none"
-              >
-                {serviceTiers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title} — ₹{parseFloat(t.price_inr.toString()).toLocaleString()} ({t.duration_minutes} min)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Appointment Date</label>
-              <input
-                type="date"
-                min={getTomorrowString()}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none"
-                required
-              />
-            </div>
+          {/* Step indicator header */}
+          <div className="border-b border-white/[0.06] px-8 pt-10 pb-4">
+            <StepIndicator current={step} />
           </div>
 
-          <button 
-            type="submit"
-            className="bg-lamborghini-gold text-black flex items-center gap-4 px-8 py-4 text-sm uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] font-sans tracking-widest font-semibold border-none rounded-none active:scale-[0.98] hover:bg-white group"
-          >
-            <span>Search Slots</span>
-            <div className="w-8 h-8 bg-black/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-              <ArrowUpRight className="w-4 h-4 text-black" strokeWidth={1.5} />
-            </div>
-          </button>
-        </form>
-      )}
+          {/* Content area */}
+          <div className="px-8 py-10 min-h-[400px]">
+            
+            {/* ── STEP 1: Event Details ─────────────────────────────────────── */}
+            {step === 1 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-8 h-8 bg-lamborghini-gold/10 border border-lamborghini-gold/20 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-lamborghini-gold" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-ash uppercase tracking-[0.25em] font-sans">Step 1 of 4</p>
+                    <h3 className="text-lg font-heading text-white uppercase tracking-wider">Event Details</h3>
+                  </div>
+                </div>
 
-      {state === "HOLDING" && (
-        <div className="flex flex-col items-center text-center">
-          <Loader2 className="w-10 h-10 text-lamborghini-gold animate-spin mb-6" />
-          <p className="text-smoke font-sans uppercase tracking-widest text-sm">Synchronizing Secure Ledger...</p>
-        </div>
-      )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="md:col-span-2">
+                    <Field label="Service Package" required>
+                      <div className="space-y-4">
+                        {/* Main category tabs */}
+                        <div className="flex border-b border-white/[0.08] mb-4">
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory("makeup")}
+                            className={`flex-1 py-3 text-xs uppercase tracking-[0.25em] font-sans font-bold border-b-2 transition-all duration-300 ${
+                              activeCategory === "makeup"
+                                ? "border-lamborghini-gold text-lamborghini-gold"
+                                : "border-transparent text-white/40 hover:text-white/70"
+                            }`}
+                          >
+                            Makeup Artistry
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory("hair")}
+                            className={`flex-1 py-3 text-xs uppercase tracking-[0.25em] font-sans font-bold border-b-2 transition-all duration-300 ${
+                              activeCategory === "hair"
+                                ? "border-lamborghini-gold text-lamborghini-gold"
+                                : "border-transparent text-white/40 hover:text-white/70"
+                            }`}
+                          >
+                            Hairstyling
+                          </button>
+                        </div>
 
-      {state === "SLOTS" && (
-        <div className="w-full flex flex-col items-center animate-in fade-in duration-700">
-          <h3 className="text-xl font-heading text-white uppercase tracking-wider mb-2 text-center">Available Appointments</h3>
-          <p className="text-smoke text-sm mb-8 text-center">Select an open slot below to temporarily hold it for 15 minutes.</p>
-          
-          {slots.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full mb-8">
-              {slots.map((slot) => {
-                const d = new Date(slot);
-                const timeStr = d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
-                return (
-                  <button
-                    key={slot}
-                    onClick={() => holdSlot(slot)}
-                    className="border border-white/20 bg-transparent text-white py-4 px-2 hover:bg-lamborghini-gold hover:text-black hover:border-lamborghini-gold transition-colors font-sans text-sm tracking-wider flex flex-col items-center gap-2 rounded-none"
-                  >
-                    <span className="font-semibold">{timeStr}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center text-center py-6">
-              <AlertCircle className="w-10 h-10 text-amber-500 mb-4" />
-              <p className="text-smoke font-sans mb-8">No available slots found for this date. Please choose another day.</p>
-            </div>
-          )}
+                        {/* Sub-tabs for Makeup occasions */}
+                        {activeCategory === "makeup" && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                            {(["bridal", "engagement", "haldi_mehndi", "party"] as const).map((occ) => {
+                              const label =
+                                occ === "haldi_mehndi"
+                                  ? "Haldi & Mehndi"
+                                  : occ.charAt(0).toUpperCase() + occ.slice(1);
+                              const isActive = activeMakeupOccasion === occ;
+                              return (
+                                <button
+                                  key={occ}
+                                  type="button"
+                                  onClick={() => setActiveMakeupOccasion(occ)}
+                                  className={`py-2 px-3 text-[9px] uppercase tracking-widest font-sans border transition-all duration-300 text-center ${
+                                    isActive
+                                      ? "bg-lamborghini-gold/10 border-lamborghini-gold text-lamborghini-gold font-semibold"
+                                      : "bg-transparent border-white/5 text-white/40 hover:border-white/20 hover:text-white"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
 
-          <button 
-            onClick={() => setState("IDLE")}
-            className="border border-white/20 text-white px-8 py-3 text-sm uppercase transition-all hover:bg-white/5 font-sans tracking-widest rounded-none"
-          >
-            Go Back
-          </button>
-        </div>
-      )}
+                        {/* Package cards grid */}
+                        {filteredTiers.length === 0 ? (
+                          <div className="py-8 text-center text-white/20 text-xs font-sans">
+                            Loading packages…
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {filteredTiers.map((t) => {
+                              const isSelected = form.service_tier_id === t.id;
+                              
+                              // Clear up occasion details from the card title if it's a makeup card
+                              // e.g. "Bridal Makeup (Standard)" -> "Standard"
+                              const displayName = activeCategory === "makeup" && t.title.includes("(")
+                                ? t.title.substring(t.title.indexOf("(") + 1, t.title.indexOf(")"))
+                                : t.title;
 
-      {state === "FORM" && (
-        <div className="w-full flex flex-col items-center animate-in fade-in duration-700">
-          <div className="flex items-center gap-3 text-lamborghini-gold mb-8 bg-lamborghini-gold/10 px-4 py-2 border border-lamborghini-gold/20">
-            <Clock className="w-4 h-4" />
-            <span className="font-sans font-semibold tracking-widest text-sm">HOLD EXPIRES IN {formatTime(timeLeft)}</span>
-          </div>
-          
-          <h3 className="text-2xl font-heading text-white uppercase tracking-wider mb-2 text-center">Complete Booking Details</h3>
-          <p className="text-smoke text-sans text-center mb-8 max-w-[400px]">Fill out the checkout form below to lock your request.</p>
-          
-          <form onSubmit={confirmBooking} className="w-full max-w-[500px] space-y-5 mb-8 text-left">
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Full Name</label>
-              <input
-                type="text"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Ayushi Rai"
-                className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none"
-                required
-              />
-            </div>
+                              return (
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  onClick={() => set("service_tier_id", t.id)}
+                                  className={`flex flex-col text-left p-5 border transition-all duration-300 relative min-h-[150px] ${
+                                    isSelected
+                                      ? "bg-lamborghini-gold/[0.04] border-lamborghini-gold text-white"
+                                      : "bg-white/[0.01] border-white/5 text-white/50 hover:border-white/20 hover:bg-white/[0.02]"
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start w-full gap-2 mb-2">
+                                    <span className={`text-[10px] uppercase tracking-wider font-semibold transition-colors duration-300 ${
+                                      isSelected ? "text-lamborghini-gold" : "text-ash"
+                                    }`}>
+                                      {displayName}
+                                    </span>
+                                    <span className="text-xs font-mono font-bold text-white whitespace-nowrap">
+                                      ₹{parseFloat(t.price_inr.toString()).toLocaleString()}
+                                    </span>
+                                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none"
-                  required
-                />
+                                  <p className="text-[11px] font-sans text-white/30 leading-relaxed mb-4 flex-grow line-clamp-3">
+                                    {t.description}
+                                  </p>
+
+                                  <div className="flex justify-between items-center w-full mt-auto pt-3 border-t border-white/[0.04] text-[9px] text-white/20 uppercase tracking-wider font-sans">
+                                    <span>Duration</span>
+                                    <span className="font-mono text-white/40 normal-case">{t.duration_minutes} min</span>
+                                  </div>
+
+                                  {isSelected && (
+                                    <div className="absolute top-0 right-0 w-2 h-2 bg-lamborghini-gold" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Hair Add-on section — shown only when a makeup package is selected */}
+                        {activeCategory === "makeup" && serviceTiers.filter((t) => !t.title.toLowerCase().includes("makeup")).length > 0 && (
+                          <div className="mt-8 border-t border-white/[0.08] pt-6">
+                            <p className="text-[10px] uppercase tracking-[0.25em] text-ash font-sans font-semibold mb-3">
+                              Add a Hairstyling Service — Optional
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {serviceTiers
+                                .filter((t) => !t.title.toLowerCase().includes("makeup"))
+                                .map((hair) => {
+                                  const isSelected = selectedAddon === hair.title;
+                                  return (
+                                    <button
+                                      key={hair.id}
+                                      type="button"
+                                      onClick={() => toggleAddon(hair.title)}
+                                      className={`flex items-center justify-between p-4 border text-left transition-all duration-300 ${
+                                        isSelected
+                                          ? "bg-lamborghini-gold/[0.04] border-lamborghini-gold text-white"
+                                          : "bg-white/[0.01] border-white/5 text-white/40 hover:border-white/20 hover:bg-white/[0.02]"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                                          isSelected ? "border-lamborghini-gold bg-lamborghini-gold" : "border-white/30 bg-transparent"
+                                        }`}>
+                                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-sans font-semibold text-white">{hair.title}</p>
+                                          <p className="text-[10px] text-ash mt-0.5">{hair.duration_minutes} min</p>
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-mono font-bold text-lamborghini-gold">
+                                        +₹{parseFloat(hair.price_inr.toString()).toLocaleString()}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Field>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Field label="Event Date" required>
+                      <input
+                        type="date"
+                        value={form.event_date}
+                        min={getTomorrowStr()}
+                        max={getMaxDateStr()}
+                        onChange={(e) => set("event_date", e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </Field>
+                  </div>
+
+
+                </div>
+
+                <div className="mt-8">
+                  <GoldButton onClick={() => setStep(2)} disabled={!canProceed(1)}>
+                    Venue & Logistics
+                  </GoldButton>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="+91 XXXXX XXXXX"
-                  className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none"
-                  required
-                />
+            )}
+
+            {/* ── STEP 2: Venue & Logistics ─────────────────────────────────── */}
+            {step === 2 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-8 h-8 bg-lamborghini-gold/10 border border-lamborghini-gold/20 flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-lamborghini-gold" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-ash uppercase tracking-[0.25em] font-sans">Step 2 of 4</p>
+                    <h3 className="text-lg font-heading text-white uppercase tracking-wider">Venue & Logistics</h3>
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field label="City / District" required>
+                      <input
+                        type="text"
+                        value={form.event_city}
+                        onChange={(e) => set("event_city", e.target.value)}
+                        placeholder="e.g. Varanasi, Delhi, Mumbai"
+                        className={inputCls}
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Venue / Hotel Name">
+                      <input
+                        type="text"
+                        value={form.event_venue}
+                        onChange={(e) => set("event_venue", e.target.value)}
+                        placeholder="e.g. The Leela Palace, Home"
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+
+
+                </div>
+
+                <div className="mt-8 flex flex-col gap-3">
+                  <GoldButton onClick={() => setStep(3)} disabled={!canProceed(2)}>
+                    Contact Information
+                  </GoldButton>
+                  <div className="flex justify-center pt-1">
+                    <GhostButton onClick={() => setStep(1)}>Back to Event</GhostButton>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-smoke mb-2">Notes &amp; Design Inspiration</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Share any details about your outfit, preferred themes, or special setup requests."
-                rows={4}
-                className="w-full bg-[#0A0A0A] border border-white/10 px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-lamborghini-gold transition-colors text-sm rounded-none resize-none"
-              />
-            </div>
+            {/* ── STEP 3: Contact Details ───────────────────────────────────── */}
+            {step === 3 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-8 h-8 bg-lamborghini-gold/10 border border-lamborghini-gold/20 flex items-center justify-center">
+                    <User className="w-4 h-4 text-lamborghini-gold" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-ash uppercase tracking-[0.25em] font-sans">Step 3 of 4</p>
+                    <h3 className="text-lg font-heading text-white uppercase tracking-wider">Contact Details</h3>
+                  </div>
+                </div>
 
-            <button 
-              type="submit"
-              className="bg-lamborghini-gold text-black flex items-center justify-center gap-4 w-full py-4 text-sm uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] font-sans tracking-widest font-semibold border-none rounded-none active:scale-[0.98] hover:bg-white"
-            >
-              <span>Confirm Appointment</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
-      )}
+                <div className="space-y-5">
+                  <Field label="Full Name" required>
+                    <input
+                      type="text"
+                      value={form.client_name}
+                      onChange={(e) => set("client_name", e.target.value)}
+                      placeholder="e.g. Priya Sharma"
+                      className={inputCls}
+                      autoComplete="name"
+                      required
+                    />
+                  </Field>
 
-      {state === "SUBMITTING" && (
-        <div className="flex flex-col items-center text-center">
-          <Loader2 className="w-10 h-10 text-lamborghini-gold animate-spin mb-6" />
-          <p className="text-smoke font-sans uppercase tracking-widest text-sm">Locking Booking in Ledger...</p>
-        </div>
-      )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <Field label="Email Address" required>
+                      <input
+                        type="email"
+                        value={form.client_email}
+                        onChange={(e) => set("client_email", e.target.value)}
+                        placeholder="name@example.com"
+                        className={inputCls}
+                        autoComplete="email"
+                        required
+                      />
+                    </Field>
 
-      {state === "SUCCESS" && (
-        <div className="flex flex-col items-center text-center animate-in zoom-in duration-700">
-          <CheckCircle className="w-16 h-16 text-emerald-500 mb-6" />
-          <h3 className="text-2xl font-heading text-white uppercase tracking-wider mb-4">Request Submitted</h3>
-          <p className="text-smoke font-sans max-w-[400px]">Your appointment has been securely held and set to pending. We will review your details and confirm via email within 48 hours.</p>
-        </div>
-      )}
+                    <Field label="WhatsApp / Phone" required>
+                      <input
+                        type="tel"
+                        value={form.client_phone}
+                        onChange={(e) => set("client_phone", e.target.value)}
+                        placeholder="+91 XXXXX XXXXX"
+                        className={inputCls}
+                        autoComplete="tel"
+                        required
+                      />
+                    </Field>
+                  </div>
 
-      {state === "ERROR" && (
-        <div className="flex flex-col items-center text-center animate-in slide-in-from-bottom-4 duration-500">
-          <div className="w-12 h-12 flex items-center justify-center border border-red-500/30 bg-red-500/10 mb-6">
-            <span className="text-red-500 font-bold text-xl">!</span>
+                  <Field label="Design Inspiration & Notes">
+                    <textarea
+                      value={form.notes}
+                      onChange={(e) => set("notes", e.target.value)}
+                      placeholder="Share your outfit color palette, design style, Pinterest references, or any special requirements…"
+                      rows={4}
+                      className={`${inputCls} resize-none leading-relaxed`}
+                    />
+                  </Field>
+                </div>
+
+                <div className="mt-8 flex flex-col gap-3">
+                  <GoldButton onClick={() => setStep(4)} disabled={!canProceed(3)}>
+                    Review & Submit
+                  </GoldButton>
+                  <div className="flex justify-center pt-1">
+                    <GhostButton onClick={() => setStep(2)}>Back to Venue</GhostButton>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 4: Review & Confirm ──────────────────────────────────── */}
+            {step === 4 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-8 h-8 bg-lamborghini-gold/10 border border-lamborghini-gold/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-lamborghini-gold" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-ash uppercase tracking-[0.25em] font-sans">Step 4 of 4</p>
+                    <h3 className="text-lg font-heading text-white uppercase tracking-wider">Review & Confirm</h3>
+                  </div>
+                </div>
+
+                {/* Review cards */}
+                <div className="space-y-3 mb-8">
+                  {/* Event */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-lamborghini-gold" strokeWidth={1.5} />
+                        <p className="text-[9px] uppercase tracking-[0.25em] text-ash font-sans font-semibold">Event</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="text-[9px] uppercase tracking-widest text-lamborghini-gold/60 hover:text-lamborghini-gold font-sans transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs font-sans">
+                      <ReviewRow label="Package" value={selectedTier?.title || "—"} />
+                      <ReviewRow label="Event Type" value={form.event_type} />
+                      <ReviewRow label="Date" value={new Date(form.event_date + "T12:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long", year: "numeric" })} />
+                      {selectedAddon && (
+                        <div className="col-span-2 mt-2 pt-2 border-t border-white/[0.04]">
+                          <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">Hairstyling Add-on</p>
+                          <p className="text-lamborghini-gold text-xs font-medium">{selectedAddon}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Venue */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-lamborghini-gold" strokeWidth={1.5} />
+                        <p className="text-[9px] uppercase tracking-[0.25em] text-ash font-sans font-semibold">Venue</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="text-[9px] uppercase tracking-widest text-lamborghini-gold/60 hover:text-lamborghini-gold font-sans transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs font-sans">
+                      <ReviewRow label="City" value={form.event_city} />
+                      {form.event_venue && <ReviewRow label="Venue" value={form.event_venue} />}
+                    </div>
+                  </div>
+
+                  {/* Contact */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3.5 h-3.5 text-lamborghini-gold" strokeWidth={1.5} />
+                        <p className="text-[9px] uppercase tracking-[0.25em] text-ash font-sans font-semibold">Contact</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="text-[9px] uppercase tracking-widest text-lamborghini-gold/60 hover:text-lamborghini-gold font-sans transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs font-sans">
+                      <ReviewRow label="Name" value={form.client_name} />
+                      <ReviewRow label="Email" value={form.client_email} />
+                      <ReviewRow label="Phone" value={form.client_phone} />
+                    </div>
+                    {form.notes && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.04]">
+                        <p className="text-[9px] uppercase tracking-widest text-ash font-sans mb-1.5">Notes</p>
+                        <p className="text-white/50 text-xs font-sans italic leading-relaxed">&ldquo;{form.notes}&rdquo;</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Total Cost Breakdown */}
+                {selectedTier && (() => {
+                  const addonTier = selectedAddon
+                    ? serviceTiers.find((t) => t.title === selectedAddon)
+                    : null;
+                  const base = parseFloat(selectedTier.price_inr.toString());
+                  const addon = addonTier ? parseFloat(addonTier.price_inr.toString()) : 0;
+                  const total = base + addon;
+                  return (
+                    <div className="mb-6 border border-lamborghini-gold/20 bg-lamborghini-gold/[0.02]">
+                      <div className="px-5 py-3 border-b border-lamborghini-gold/10">
+                        <p className="text-[9px] uppercase tracking-[0.25em] text-lamborghini-gold/70 font-sans font-semibold">
+                          Estimated Total
+                        </p>
+                      </div>
+                      <div className="px-5 py-4 space-y-3">
+                        {/* Base package */}
+                        <div className="flex items-center justify-between">
+                          <p className="text-white/50 text-xs font-sans">{selectedTier.title}</p>
+                          <p className="text-white/70 text-xs font-mono font-semibold">
+                            ₹{base.toLocaleString()}
+                          </p>
+                        </div>
+                        {/* Add-on */}
+                        {addonTier && (
+                          <div className="flex items-center justify-between">
+                            <p className="text-white/50 text-xs font-sans">{addonTier.title}</p>
+                            <p className="text-white/70 text-xs font-mono font-semibold">
+                              +₹{addon.toLocaleString()}
+                            </p>
+                          </div>
+                        )}
+                        {/* Divider */}
+                        <div className="border-t border-lamborghini-gold/10 pt-3 flex items-center justify-between">
+                          <p className="text-white text-sm font-sans font-bold uppercase tracking-wider">Total</p>
+                          <p className="text-lamborghini-gold text-lg font-mono font-bold">
+                            ₹{total.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Disclaimer */}
+                <p className="text-white/20 text-[11px] font-sans leading-relaxed text-center mb-6">
+                  By submitting, you agree to our inquiry process. No payment is required at this stage.
+                  Our team will review and respond within <span className="text-lamborghini-gold/60">48 hours</span>.
+                </p>
+
+                <div className="flex flex-col gap-3">
+                  <GoldButton onClick={handleSubmit} icon={<Sparkles className="w-3.5 h-3.5 text-black" />}>
+                    Send Inquiry
+                  </GoldButton>
+                  <div className="flex justify-center pt-1">
+                    <GhostButton onClick={() => setStep(3)}>Back to Contact</GhostButton>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
-          <h3 className="text-xl font-heading text-white uppercase tracking-wider mb-4">Reservation Issue</h3>
-          <p className="text-smoke font-sans max-w-[400px] mb-8">{errorMessage}</p>
-          
-          <button 
-            onClick={() => { setState("IDLE"); setSlots([]); setBookingId(null); }}
-            className="border border-white/20 text-white px-8 py-3 text-sm uppercase transition-all hover:bg-white/5 font-sans tracking-widest rounded-none"
-          >
-            Start Over
-          </button>
-        </div>
-      )}
 
+          {/* Bottom progress bar */}
+          <div className="border-t border-white/[0.04] px-8 py-4 flex items-center justify-between">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4].map((s) => (
+                <div
+                  key={s}
+                  className={`h-[2px] w-10 transition-all duration-700 ${
+                    s <= step ? "bg-lamborghini-gold" : "bg-white/10"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] text-ash uppercase tracking-widest font-sans">
+              {step} / 4
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Review Row helper ────────────────────────────────────────────────────────
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-white/25 text-[9px] uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-white/80 text-xs font-medium truncate">{value}</p>
     </div>
   );
 }

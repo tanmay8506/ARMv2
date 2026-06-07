@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
-import { Search, Bookmark } from "lucide-react";
+import { Search, Bookmark, ArrowUpRight } from "lucide-react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -94,6 +94,14 @@ export default function Navbar() {
         <div className="flex items-center gap-4 md:gap-6 pointer-events-auto">
           <Search className="w-5 h-5 text-white cursor-pointer hover:text-lamborghini-gold transition-colors duration-300" strokeWidth={1} />
           <Bookmark className="w-5 h-5 text-white cursor-pointer hover:text-lamborghini-gold transition-colors duration-300" strokeWidth={1} />
+          <Link
+            href="/book"
+            onClick={closeMenu}
+            className="hidden md:flex items-center gap-2.5 bg-lamborghini-gold text-black px-4 py-2 text-[10px] uppercase tracking-[0.18em] font-sans font-bold hover:bg-white transition-all duration-500 group"
+          >
+            <span>Book Now</span>
+            <ArrowUpRight className="w-3 h-3 text-black transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
+          </Link>
         </div>
       </nav>
 
