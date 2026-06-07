@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
@@ -14,6 +14,16 @@ export default async function ClientPortal() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Reconcile anonymous bookings with user ID by matching email
+  if (user.email) {
+    const adminSupabase = createAdminClient();
+    await adminSupabase
+      .from("bookings")
+      .update({ client_id: user.id })
+      .eq("client_email", user.email)
+      .neq("client_id", user.id);
   }
 
   // Fetch client's bookings

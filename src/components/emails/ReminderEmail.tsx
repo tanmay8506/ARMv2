@@ -10,19 +10,28 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+interface ReminderEmailProps {
+  clientEmail: string;
+  clientName?: string;
+  serviceTitle: string;
+  bookingTime: string;
+  bookingId: string;
+}
+
 export const ReminderEmail = ({
   clientEmail = "client@example.com",
+  clientName = "",
   serviceTitle = "Bridal Mehendi",
   bookingTime = "10:00 AM IST",
   bookingId = "BKG-123",
-}) => (
+}: ReminderEmailProps) => (
   <Html>
     <Head />
     <Preview>Reminder: Your upcoming ARM Artistry appointment</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>ARM Artistry</Heading>
-        <Text style={text}>Hello {clientEmail},</Text>
+        <Text style={text}>Hello {clientName || clientEmail},</Text>
         <Text style={text}>
           This is a friendly reminder for your upcoming <strong>{serviceTitle}</strong> session tomorrow at <strong>{bookingTime}</strong>.
         </Text>

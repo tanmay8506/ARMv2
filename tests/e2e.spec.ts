@@ -415,6 +415,12 @@ test.describe("Session Video — Complete Booking Flow", () => {
       await page.waitForTimeout(2000);
 
       // Step 2: Navigate to booking
+      const menuBtn = page.locator('nav div[role="button"]').first();
+      if (await menuBtn.isVisible().catch(() => false)) {
+        await menuBtn.click();
+        await page.waitForTimeout(1000); // Wait for menu open animation
+      }
+
       const bookingLink = page
         .locator("a[href*='book'], a:has-text('Book'), a:has-text('Appointment')")
         .first();

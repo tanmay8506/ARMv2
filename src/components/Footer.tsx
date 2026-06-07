@@ -8,23 +8,23 @@ export default function Footer() {
         <div>
           <h3 className="text-white uppercase tracking-widest text-xs md:text-sm mb-6">Explore</h3>
           <ul className="flex flex-col gap-4 text-ash font-sans text-sm md:text-base">
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Portfolio</Link></li>
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Services</Link></li>
-            <li><Link href="#" className="hover:text-link-blue transition-colors">About</Link></li>
+            <li><Link href="/portfolio" className="hover:text-lamborghini-gold transition-colors">Portfolio</Link></li>
+            <li><Link href="/services" className="hover:text-lamborghini-gold transition-colors">Services</Link></li>
+            <li><Link href="/" className="hover:text-lamborghini-gold transition-colors">About</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="text-white uppercase tracking-widest text-xs md:text-sm mb-6">Legal</h3>
           <ul className="flex flex-col gap-4 text-ash font-sans text-sm md:text-base">
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Privacy Policy</Link></li>
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Terms of Service</Link></li>
+            <li><Link href="#" className="hover:text-lamborghini-gold transition-colors">Privacy Policy</Link></li>
+            <li><Link href="#" className="hover:text-lamborghini-gold transition-colors">Terms of Service</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="text-white uppercase tracking-widest text-xs md:text-sm mb-6">Connect</h3>
           <ul className="flex flex-col gap-4 text-ash font-sans text-sm md:text-base">
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Instagram</Link></li>
-            <li><Link href="#" className="hover:text-link-blue transition-colors">Contact</Link></li>
+            <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-lamborghini-gold transition-colors">Instagram</a></li>
+            <li><Link href="/book" className="hover:text-lamborghini-gold transition-colors">Contact & Booking</Link></li>
           </ul>
         </div>
       </div>

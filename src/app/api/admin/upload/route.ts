@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { createAdminClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 // Node.js runtime — required for Buffer streaming (avoids Vercel memory limits)
 export const runtime = "nodejs";
@@ -93,18 +94,27 @@ export async function POST(request: Request) {
       }
     );
 
-    // Save to Supabase portfolio table (non-fatal if missing table)
+    // Save to Supabase portfolio table and revalidate path cache
     try {
       const supabase = createAdminClient();
-      await supabase.from("portfolio_items").insert({
+      const { error: dbErr } = await supabase.from("portfolio_assets").insert({
         title: title || file.name.split(".")[0],
-        image_url: uploadResult.secure_url,
-        cloudinary_public_id: uploadResult.public_id,
+        cloudinary_path: uploadResult.secure_url,
+        width: uploadResult.width,
+        height: uploadResult.height,
         category,
-        is_featured: false,
+        display_order: 0,
+        is_active: true,
       });
+
+      if (dbErr) throw dbErr;
+
+      // On-demand Next.js ISR path revalidation
+      revalidatePath("/");
+      revalidatePath("/portfolio");
     } catch (dbErr) {
-      console.error("[Upload] DB insert failed (non-fatal):", dbErr);
+      console.error("[Upload] Supabase DB insert failed:", dbErr);
+      return NextResponse.json({ error: "Failed to record image metadata in database." }, { status: 500 });
     }
 
     return NextResponse.json({

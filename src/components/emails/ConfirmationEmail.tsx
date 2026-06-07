@@ -10,19 +10,28 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+interface ConfirmationEmailProps {
+  clientEmail: string;
+  clientName?: string;
+  serviceTitle: string;
+  bookingTime: string;
+  bookingId: string;
+}
+
 export const ConfirmationEmail = ({
   clientEmail = "client@example.com",
+  clientName = "",
   serviceTitle = "Bridal Mehendi",
   bookingTime = "10:00 AM IST",
   bookingId = "BKG-123",
-}) => (
+}: ConfirmationEmailProps) => (
   <Html>
     <Head />
     <Preview>Your ARM Artistry booking is confirmed!</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>ARM Artistry</Heading>
-        <Text style={text}>Hello {clientEmail},</Text>
+        <Text style={text}>Hello {clientName || clientEmail},</Text>
         <Text style={text}>
           Great news! Your booking request for the <strong>{serviceTitle}</strong> session at <strong>{bookingTime}</strong> has been <strong>APPROVED</strong>.
         </Text>

@@ -9,6 +9,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Reject non-UTC ISO dates to enforce database consistency
+    if (!start_time.endsWith("Z") && !start_time.includes("+00:00")) {
+      return NextResponse.json(
+        { error: "start_time must be a UTC ISO string (ending in Z or +00:00)" },
+        { status: 400 }
+      );
+    }
+    if (!end_time.endsWith("Z") && !end_time.includes("+00:00")) {
+      return NextResponse.json(
+        { error: "end_time must be a UTC ISO string (ending in Z or +00:00)" },
+        { status: 400 }
+      );
+    }
+
     const supabase = createClient();
 
     // Call the Postgres RPC function to atomically hold the slot
@@ -17,12 +31,16 @@ export async function POST(request: Request) {
       p_service_tier_id: service_tier_id,
       p_start_time: start_time,
       p_end_time: end_time,
-      p_hold_duration: "15 minutes"
+      p_hold_duration: "15 minutes",
     });
 
     if (error) {
-      // 409 Conflict if the unique_violation error is thrown by the RPC (Slot taken)
-      if (error.message.includes("Slot is already taken") || error.code === "P0001") {
+      // 409 Conflict if unique_violation or custom exception raised
+      if (
+        error.message.includes("Slot is already taken") || 
+        error.code === "23505" || 
+        error.code === "P0001"
+      ) {
         return NextResponse.json({ error: "Slot no longer available" }, { status: 409 });
       }
       throw error;

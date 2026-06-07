@@ -21,6 +21,8 @@ const config: Config = {
         ash: "#7D7D7D",
         "cyan-pulse": "#29ABE2",
         "link-blue": "#3860BE",
+        smoke: "#D0D0D0",
+        steel: "#555555",
       },
       fontFamily: {
         heading: ["var(--font-playfair)", "serif"],

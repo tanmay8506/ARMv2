@@ -10,19 +10,28 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 
+interface DeclineEmailProps {
+  clientEmail: string;
+  clientName?: string;
+  serviceTitle: string;
+  bookingTime: string;
+  bookingId: string;
+}
+
 export const DeclineEmail = ({
   clientEmail = "client@example.com",
+  clientName = "",
   serviceTitle = "Bridal Mehendi",
   bookingTime = "10:00 AM IST",
   bookingId = "BKG-123",
-}) => (
+}: DeclineEmailProps) => (
   <Html>
     <Head />
     <Preview>Update regarding your ARM Artistry booking request</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>ARM Artistry</Heading>
-        <Text style={text}>Hello {clientEmail},</Text>
+        <Text style={text}>Hello {clientName || clientEmail},</Text>
         <Text style={text}>
           Unfortunately, we are unable to accommodate your booking request for the <strong>{serviceTitle}</strong> session at <strong>{bookingTime}</strong>.
         </Text>

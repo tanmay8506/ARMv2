@@ -12,6 +12,7 @@ import * as React from "react";
 
 interface ReceiptEmailProps {
   clientEmail: string;
+  clientName?: string;
   serviceTitle: string;
   bookingTime: string;
   bookingId: string;
@@ -19,6 +20,7 @@ interface ReceiptEmailProps {
 
 export const ReceiptEmail = ({
   clientEmail = "client@example.com",
+  clientName = "",
   serviceTitle = "Bridal Mehendi",
   bookingTime = "10:00 AM IST",
   bookingId = "BKG-123",
@@ -29,7 +31,7 @@ export const ReceiptEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>ARM Artistry</Heading>
-        <Text style={text}>Hello {clientEmail},</Text>
+        <Text style={text}>Hello {clientName || clientEmail},</Text>
         <Text style={text}>
           We have received your booking request for the <strong>{serviceTitle}</strong> session at <strong>{bookingTime}</strong>.
         </Text>
