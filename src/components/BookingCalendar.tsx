@@ -197,6 +197,7 @@ export default function BookingWizard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successId, setSuccessId] = useState("");
   const topRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(false);
 
   const [form, setForm] = useState<FormData>({
     service_tier_id: "",
@@ -216,9 +217,7 @@ export default function BookingWizard() {
   const [activeMakeupOccasion, setActiveMakeupOccasion] = useState<"bridal" | "engagement" | "haldi_mehndi" | "party">("bridal");
   const [selectedAddon, setSelectedAddon] = useState<string>("");
 
-  const toggleAddon = (title: string) => {
-    setSelectedAddon((prev) => (prev === title ? "" : title));
-  };
+
 
   useEffect(() => {
     if (activeCategory === "hair") {
@@ -228,7 +227,11 @@ export default function BookingWizard() {
 
   // Scroll wizard top into view on step change
   useEffect(() => {
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (isMounted.current) {
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      isMounted.current = true;
+    }
   }, [step]);
 
   // Fetch service tiers
@@ -577,48 +580,7 @@ export default function BookingWizard() {
                           </div>
                         )}
 
-                        {/* Hair Add-on section — shown only when a makeup package is selected */}
-                        {activeCategory === "makeup" && serviceTiers.filter((t) => !t.title.toLowerCase().includes("makeup")).length > 0 && (
-                          <div className="mt-8 border-t border-white/[0.08] pt-6">
-                            <p className="text-[10px] uppercase tracking-[0.25em] text-ash font-sans font-semibold mb-3">
-                              Add a Hairstyling Service — Optional
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {serviceTiers
-                                .filter((t) => !t.title.toLowerCase().includes("makeup"))
-                                .map((hair) => {
-                                  const isSelected = selectedAddon === hair.title;
-                                  return (
-                                    <button
-                                      key={hair.id}
-                                      type="button"
-                                      onClick={() => toggleAddon(hair.title)}
-                                      className={`flex items-center justify-between p-4 border text-left transition-all duration-300 ${
-                                        isSelected
-                                          ? "bg-lamborghini-gold/[0.04] border-lamborghini-gold text-white"
-                                          : "bg-white/[0.01] border-white/5 text-white/40 hover:border-white/20 hover:bg-white/[0.02]"
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                                          isSelected ? "border-lamborghini-gold bg-lamborghini-gold" : "border-white/30 bg-transparent"
-                                        }`}>
-                                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
-                                        </div>
-                                        <div>
-                                          <p className="text-xs font-sans font-semibold text-white">{hair.title}</p>
-                                          <p className="text-[10px] text-ash mt-0.5">{hair.duration_minutes} min</p>
-                                        </div>
-                                      </div>
-                                      <span className="text-xs font-mono font-bold text-lamborghini-gold">
-                                        +₹{parseFloat(hair.price_inr.toString()).toLocaleString()}
-                                      </span>
-                                    </button>
-                                  );
-                                })}
-                            </div>
-                          </div>
-                        )}
+
                       </div>
                     </Field>
                   </div>

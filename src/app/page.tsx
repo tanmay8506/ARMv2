@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 
 
 const BookingCalendar = dynamic(() => import("@/components/BookingCalendar"), { ssr: false });
@@ -17,16 +18,6 @@ export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    // Hero Entrance
-    gsap.from(".hero-reveal", {
-      y: 100,
-      opacity: 0,
-      filter: "blur(10px)",
-      duration: 1.5,
-      stagger: 0.15,
-      ease: "power4.out",
-    });
-
     // Scroll Reveal Elements
     const sections = gsap.utils.toArray(".scroll-section") as HTMLElement[];
     sections.forEach((section) => {
@@ -50,28 +41,11 @@ export default function Home() {
   return (
     <main ref={containerRef} className="w-full relative bg-black min-h-[300dvh] overflow-clip">
       {/* Hero Section */}
-      <section className="min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 pt-20">
-        <div className="hero-reveal text-lamborghini-gold text-sm uppercase tracking-[0.2em] font-medium mb-6">
-          Exclusive Bridal Makeup &amp; Styling
-        </div>
-        <h1 className="hero-reveal text-[54px] md:text-[80px] lg:text-[120px] font-heading text-white tracking-tight uppercase text-center max-w-[1440px] leading-[0.92]">
-          ARM Artistry
-        </h1>
-        <p className="hero-reveal mt-10 text-ash text-lg md:text-xl font-sans tracking-wide max-w-[600px] text-center px-4">
-          The intersection of premium cosmetic design and unapologetic modern luxury. We craft bespoke beauty, makeup, and henna narratives for the vanguard bride.
-        </p>
-        
-        <div className="hero-reveal mt-16 group cursor-pointer">
-          <Link href="/services">
-            <button className="bg-lamborghini-gold text-black flex items-center gap-4 px-6 py-4 text-base uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] font-sans tracking-wider font-semibold border-none rounded-none active:scale-[0.98]">
-              <span>Discover Services</span>
-              <div className="w-8 h-8 bg-black/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-                <ArrowUpRight className="w-4 h-4 text-black" strokeWidth={1.5} />
-              </div>
-            </button>
-          </Link>
-        </div>
-      </section>
+      <HeroGeometric
+        badge="Exclusive Bridal Makeup & Styling"
+        title1="ARM Artistry"
+        title2="Bespoke Beauty"
+      />
 
       {/* Asymmetrical Bento & Typography block */}
       <section className="scroll-section min-h-[100dvh] w-full py-24 md:py-40 px-4 md:px-10 flex items-center justify-center bg-black">
@@ -85,13 +59,16 @@ export default function Home() {
             <p className="mt-8 text-smoke text-base font-sans leading-[1.56]">
               Every application is a masterpiece, crafted with precision and passion. We specialize in luxury bridal makeovers, high-definition camera-ready styling, and intricate contemporary henna designs tailored to your unique story.
             </p>
-            <div className="mt-12 group w-max cursor-pointer">
-              <button className="bg-transparent text-white border border-white/20 flex items-center gap-4 px-5 py-4 text-sm uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/5 font-sans tracking-widest rounded-none active:scale-[0.98]">
+            <div className="mt-12 group w-max">
+              <Link 
+                href="/portfolio"
+                className="bg-transparent text-white border border-white/20 flex items-center gap-4 px-5 py-4 text-sm uppercase transition-all duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/5 font-sans tracking-widest rounded-none active:scale-[0.98] cursor-pointer"
+              >
                 <span>View Portfolio</span>
                 <div className="w-6 h-6 bg-white/10 flex items-center justify-center transition-transform duration-[700ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
                   <ArrowUpRight className="w-3 h-3 text-white" strokeWidth={1.5} />
                 </div>
-              </button>
+              </Link>
             </div>
           </div>
 

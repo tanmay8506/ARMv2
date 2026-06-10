@@ -24,6 +24,13 @@ export default function SmoothScroll({
       touchMultiplier: 2,
     });
 
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+      lenis.scrollTo(0, { immediate: true });
+    }
+
     // Wire Lenis smooth scrolling into GSAP's ticker to prevent double-RAF
     lenis.on("scroll", ScrollTrigger.update);
 
